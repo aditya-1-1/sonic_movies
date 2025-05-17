@@ -14,7 +14,12 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-REPLACE_ME_WITH_A_S
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'sonic-movie.onrender.com',
+    '.onrender.com'
+]
 
 # Application definition
 INSTALLED_APPS = [
