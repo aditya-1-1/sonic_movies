@@ -1,0 +1,302 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Your Library - Sonic{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Watchlist Section -->
+    <div class="movie-list-container">
+        <h2 class="movie-list-title">Your Watchlist</h2>
+        <button class="scroll-button scroll-left"><i class="fas fa-chevron-left"></i></button>
+        <div class="movie-list">
+            {% for watchlist_movie in watchlist_movies %}
+            <div class="movie-card">
+                <img src="{{ watchlist_movie.movie.poster_path }}" alt="{{ watchlist_movie.movie.title }}" class="card-img-top">
+                <div class="card-body">
+                    <h5 class="movie-title">{{ watchlist_movie.movie.title }}</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="movie-rating">
+                            <i class="fas fa-star"></i> {{ watchlist_movie.movie.vote_average|floatformat:1 }}
+                        </div>
+                        <button class="like-button {% if watchlist_movie.movie in user.liked_movies.all %}active{% endif %}" 
+                                data-movie-id="{{ watchlist_movie.movie.tmdb_id }}"
+                                onclick="toggleLike(this)">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-overlay">
+                    <button class="btn btn-primary" onclick="showMovieDetails('{{ watchlist_movie.movie.tmdb_id }}')">
+                        View Details
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-film fa-3x mb-3" style="color: var(--gray-text);"></i>
+                <h4 class="text-muted">Your watchlist is empty</h4>
+                <p class="text-muted">Add movies to your watchlist to see them here</p>
+            </div>
+            {% endfor %}
+        </div>
+        <button class="scroll-button scroll-right"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <!-- Liked Movies Section -->
+    <div class="movie-list-container">
+        <h2 class="movie-list-title">Liked Movies</h2>
+        <button class="scroll-button scroll-left"><i class="fas fa-chevron-left"></i></button>
+        <div class="movie-list">
+            {% for liked_movie in liked_movies %}
+            <div class="movie-card">
+                <img src="{{ liked_movie.movie.poster_path }}" alt="{{ liked_movie.movie.title }}" class="card-img-top">
+                <div class="card-body">
+                    <h5 class="movie-title">{{ liked_movie.movie.title }}</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="movie-rating">
+                            <i class="fas fa-star"></i> {{ liked_movie.movie.vote_average|floatformat:1 }}
+                        </div>
+                        <button class="like-button active" 
+                                data-movie-id="{{ liked_movie.movie.tmdb_id }}"
+                                onclick="toggleLike(this)">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-overlay">
+                    <button class="btn btn-primary" onclick="showMovieDetails('{{ liked_movie.movie.tmdb_id }}')">
+                        View Details
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-heart fa-3x mb-3" style="color: var(--gray-text);"></i>
+                <h4 class="text-muted">No liked movies yet</h4>
+                <p class="text-muted">Like movies to see them here</p>
+            </div>
+            {% endfor %}
+        </div>
+        <button class="scroll-button scroll-right"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</div>
+
+<!-- Movie Details Modal -->
+<div class="modal fade" id="movieModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="movieTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <img id="moviePoster" src="" alt="" class="img-fluid rounded">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="mb-2">Release Date: <span id="movieReleaseDate"></span></h6>
+                                <h6 class="mb-2">Rating: <span id="movieRating"></span></h6>
+                                <h6 class="mb-2">Runtime: <span id="movieRuntime"></span></h6>
+                                <h6 class="mb-2">Genres: <span id="movieGenres"></span></h6>
+                            </div>
+                            <button class="like-button" id="modalLikeButton" onclick="toggleLike(this)">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                        <p id="movieOverview" class="mb-4"></p>
+                        <div class="d-flex gap-3">
+                            <button class="watch-now-btn" id="watchNowBtn">
+                                <i class="fas fa-play"></i> Watch Now
+                            </button>
+                            <button class="btn btn-outline-light" onclick="toggleWatchlist()" id="watchlistBtn">
+                                <i class="fas fa-plus"></i> Add to Watchlist
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Video Player -->
+                <div class="mt-4" id="videoContainer" style="display: none;">
+                    <div class="ratio ratio-16x9">
+                        <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentMovieId = null;
+
+function showMovieDetails(movieId) {
+    currentMovieId = movieId;
+    fetch(`/api/movie/${movieId}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('movieTitle').textContent = data.title;
+            document.getElementById('moviePoster').src = data.poster_path;
+            document.getElementById('movieReleaseDate').textContent = data.release_date;
+            document.getElementById('movieRating').textContent = `${data.vote_average} (${data.vote_count} votes)`;
+            document.getElementById('movieRuntime').textContent = `${data.runtime} minutes`;
+            document.getElementById('movieGenres').textContent = data.genres.join(', ');
+            document.getElementById('movieOverview').textContent = data.overview;
+            
+            // Update like button state
+            const likeButton = document.getElementById('modalLikeButton');
+            likeButton.classList.toggle('active', data.is_liked);
+            likeButton.dataset.movieId = movieId;
+
+            // Show/hide watch now button based on video availability
+            const watchNowBtn = document.getElementById('watchNowBtn');
+            if (data.video_url) {
+                watchNowBtn.style.display = 'flex';
+                watchNowBtn.onclick = () => playVideo(data.video_url);
+            } else {
+                watchNowBtn.style.display = 'none';
+            }
+
+            // In library page, all movies are in watchlist, so always show Remove button
+            const watchlistBtn = document.getElementById('watchlistBtn');
+            watchlistBtn.innerHTML = '<i class="fas fa-trash"></i> Remove from Watchlist';
+            watchlistBtn.classList.remove('btn-outline-light');
+            watchlistBtn.classList.add('btn-outline-danger');
+
+            // Show modal
+            new bootstrap.Modal(document.getElementById('movieModal')).show();
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function toggleLike(button) {
+    const movieId = button.dataset.movieId;
+    fetch(`/api/movie/${movieId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.classList.toggle('active', data.is_liked);
+        // Update all like buttons for this movie
+        document.querySelectorAll(`.like-button[data-movie-id="${movieId}"]`).forEach(btn => {
+            btn.classList.toggle('active', data.is_liked);
+        });
+        
+        // If unliked, remove from liked movies section
+        if (!data.is_liked) {
+            const movieCard = button.closest('.movie-card');
+            if (movieCard && movieCard.closest('.movie-list').querySelector('.movie-list-title').textContent === 'Liked Movies') {
+                movieCard.remove();
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function toggleWatchlist() {
+    if (!currentMovieId) return;
+    
+    const watchlistBtn = document.getElementById('watchlistBtn');
+    const isInWatchlist = watchlistBtn.innerHTML.includes('Remove');
+    
+    fetch(`/api/movie/${currentMovieId}/watchlist/`, {
+        method: isInWatchlist ? 'DELETE' : 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (!isInWatchlist) {
+                // If we just added to watchlist, show Remove button
+                watchlistBtn.innerHTML = '<i class="fas fa-trash"></i> Remove from Watchlist';
+                watchlistBtn.classList.remove('btn-outline-light');
+                watchlistBtn.classList.add('btn-outline-danger');
+            } else {
+                // If we just removed from watchlist, show Add button
+                watchlistBtn.innerHTML = '<i class="fas fa-plus"></i> Add to Watchlist';
+                watchlistBtn.classList.remove('btn-outline-danger');
+                watchlistBtn.classList.add('btn-outline-light');
+                
+                // Remove movie card from watchlist section
+                const movieCard = document.querySelector(`.movie-card[data-movie-id="${currentMovieId}"]`);
+                if (movieCard) {
+                    movieCard.remove();
+                }
+            }
+            
+            showToast(data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function playVideo(videoUrl) {
+    const container = document.getElementById('videoContainer');
+    const player = document.getElementById('videoPlayer');
+    container.style.display = 'block';
+    player.src = videoUrl;
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast position-fixed bottom-0 end-0 m-3';
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    toast.style.backgroundColor = '#000';
+    toast.style.color = 'whitesmoke';
+    toast.style.border = '1px solid #333';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, {
+        delay: 3000
+    });
+    bsToast.show();
+    toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toast);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Close video player when modal is closed
+document.getElementById('movieModal').addEventListener('hidden.bs.modal', function () {
+    const container = document.getElementById('videoContainer');
+    const player = document.getElementById('videoPlayer');
+    container.style.display = 'none';
+    player.src = '';
+    currentMovieId = null;
+});
+</script>
+{% endblock %} 

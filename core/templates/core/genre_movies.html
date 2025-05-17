@@ -1,0 +1,275 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ genre }} Movies - Sonic{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">{{ genre }} Movies</h1>
+        <a href="{% url 'home' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+    </div>
+
+    {% if movies %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        {% for movie in movies %}
+        <div class="col">
+            <div class="movie-card h-100">
+                <div class="movie-poster">
+                    <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="card-img-top">
+                    <div class="card-overlay">
+                        <button class="btn btn-primary" onclick="showMovieDetails('{{ movie.tmdb_id }}')">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="movie-title">{{ movie.title }}</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="movie-rating">
+                            <i class="fas fa-star"></i> {{ movie.vote_average|floatformat:1 }}
+                            <small class="text-muted">({{ movie.vote_count }})</small>
+                        </div>
+                        {% if user.is_authenticated %}
+                        <button class="like-button {% if movie in user.liked_movies.all %}active{% endif %}" 
+                                data-movie-id="{{ movie.tmdb_id }}"
+                                onclick="toggleLike(this)">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            Released: {{ movie.release_date|date:"F d, Y" }}
+                        </small>
+                    </div>
+                    <div class="mt-2">
+                        {% for genre in movie.get_genres_list %}
+                        <span class="badge bg-secondary me-1">{{ genre }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if movies.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ movies.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in movies.paginator.page_range %}
+                {% if num == movies.number %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > movies.number|add:'-3' and num < movies.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if movies.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ movies.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ total_pages }}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info">
+        No {{ genre }} movies found. Please try again later.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Movie Details Modal -->
+<div class="modal fade" id="movieModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="movieTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <img id="moviePoster" src="" alt="" class="img-fluid rounded">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="mb-2">Release Date: <span id="movieReleaseDate"></span></h6>
+                                <h6 class="mb-2">Rating: <span id="movieRating"></span></h6>
+                                <h6 class="mb-2">Runtime: <span id="movieRuntime"></span></h6>
+                                <h6 class="mb-2">Genres: <span id="movieGenres"></span></h6>
+                            </div>
+                            {% if user.is_authenticated %}
+                            <button class="like-button" id="modalLikeButton" onclick="toggleLike(this)">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        <p id="movieOverview" class="mb-4"></p>
+                        {% if user.is_authenticated %}
+                        <div class="d-flex gap-3">
+                            <button class="watch-now-btn" id="watchNowBtn">
+                                <i class="fas fa-play"></i> Watch Now
+                            </button>
+                            <button class="btn btn-outline-light" onclick="addToWatchlist()">
+                                <i class="fas fa-plus"></i> Add to Watchlist
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Video Player -->
+                <div class="mt-4" id="videoContainer" style="display: none;">
+                    <div class="ratio ratio-16x9">
+                        <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentMovieId = null;
+
+function showMovieDetails(movieId) {
+    currentMovieId = movieId;
+    fetch(`/api/movie/${movieId}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('movieTitle').textContent = data.title;
+            document.getElementById('moviePoster').src = data.poster_path;
+            document.getElementById('movieReleaseDate').textContent = data.release_date;
+            document.getElementById('movieRating').textContent = `${data.vote_average} (${data.vote_count} votes)`;
+            document.getElementById('movieRuntime').textContent = `${data.runtime} minutes`;
+            document.getElementById('movieGenres').textContent = data.genres.join(', ');
+            document.getElementById('movieOverview').textContent = data.overview;
+            
+            {% if user.is_authenticated %}
+            // Update like button state
+            const likeButton = document.getElementById('modalLikeButton');
+            likeButton.classList.toggle('active', data.is_liked);
+            likeButton.dataset.movieId = movieId;
+
+            // Show/hide watch now button based on video availability
+            const watchNowBtn = document.getElementById('watchNowBtn');
+            if (data.video_url) {
+                watchNowBtn.style.display = 'flex';
+                watchNowBtn.onclick = () => playVideo(data.video_url);
+            } else {
+                watchNowBtn.style.display = 'none';
+            }
+            {% endif %}
+
+            // Show modal
+            new bootstrap.Modal(document.getElementById('movieModal')).show();
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+{% if user.is_authenticated %}
+function toggleLike(button) {
+    const movieId = button.dataset.movieId;
+    fetch(`/api/movie/${movieId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.classList.toggle('active', data.is_liked);
+        // Update all like buttons for this movie
+        document.querySelectorAll(`.like-button[data-movie-id="${movieId}"]`).forEach(btn => {
+            btn.classList.toggle('active', data.is_liked);
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function addToWatchlist() {
+    if (!currentMovieId) return;
+    
+    fetch(`/api/movie/${currentMovieId}/watchlist/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+{% endif %}
+
+function playVideo(videoUrl) {
+    const container = document.getElementById('videoContainer');
+    const player = document.getElementById('videoPlayer');
+    container.style.display = 'block';
+    player.src = videoUrl;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %} 

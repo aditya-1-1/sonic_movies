@@ -1,0 +1,528 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Base styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #0f0f0f;
+    color: #ffffff;
+}
+
+/* Movie List Styles */
+.movie-list-container {
+    margin-bottom: 2rem;
+    position: relative;
+    padding-top: 1rem;
+}
+
+.movie-list-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    margin-left: 1rem;
+}
+
+.movie-list-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.movie-list {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 0.5rem 0;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.movie-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.movie-card {
+    flex: 0 0 auto;
+    width: 200px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.movie-card:hover {
+    transform: translateY(-5px);
+}
+
+.movie-poster {
+    position: relative;
+    width: 100%;
+    padding-top: 150%; /* 2:3 aspect ratio */
+    overflow: hidden;
+}
+
+.movie-poster img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.movie-poster:hover .card-overlay {
+    opacity: 1;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+.movie-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.movie-rating {
+    color: #ffc107;
+    font-size: 0.9rem;
+}
+
+.like-button {
+    background: none;
+    border: none;
+    color: var(--gray-text);
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+}
+
+.like-button:hover {
+    color: #dc3545;
+}
+
+.like-button.active {
+    color: #dc3545;
+}
+
+.scroll-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    transition: background-color 0.2s;
+}
+
+.scroll-button:hover {
+    background: var(--hover-bg);
+}
+
+.scroll-button.scroll-left {
+    left: -20px;
+}
+
+.scroll-button.scroll-right {
+    right: -20px;
+}
+
+/* Search Form Styles */
+.search-form {
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.search-form .input-group {
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+    border: none;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    color: var(--text-color);
+}
+
+.search-input:focus {
+    box-shadow: none;
+    background: transparent;
+}
+
+.search-form .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Movie Modal Styles */
+.modal-content {
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+.modal-header {
+    border-bottom-color: var(--border-color);
+}
+
+.modal-footer {
+    border-top-color: var(--border-color);
+}
+
+.watch-now-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.watch-now-btn:hover {
+    background: var(--primary-hover);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .movie-card {
+        width: 160px;
+    }
+
+    .scroll-button {
+        width: 32px;
+        height: 32px;
+    }
+
+    .scroll-button.scroll-left {
+        left: -16px;
+    }
+
+    .scroll-button.scroll-right {
+        right: -16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .movie-card {
+        width: 140px;
+    }
+
+    .movie-title {
+        font-size: 0.9rem;
+    }
+
+    .movie-rating {
+        font-size: 0.8rem;
+    }
+}
+
+/* Modal styles */
+.modal-content {
+    background-color: rgba(28, 28, 28, 0.95);  /* Slightly translucent dark background */
+    backdrop-filter: blur(10px);  /* Add blur effect */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-title {
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+
+/* Movie card styles */
+.movie-card {
+    background-color: rgba(28, 28, 28, 0.8);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.movie-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.movie-title {
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin: 0.75rem 0;
+    color: #ffffff;
+}
+
+.movie-rating {
+    font-weight: 500;
+    color: #ffd700;
+}
+
+/* Button styles */
+.btn-primary {
+    background-color: #e50914;
+    border: none;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #f40612;
+}
+
+/* Badge styles */
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+    border-radius: 6px;
+}
+
+.badge.bg-primary {
+    background-color: #e50914 !important;
+}
+
+.badge.bg-secondary {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Movie details in modal */
+.movie-overview {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.movie-info-label {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Like button styles */
+.like-button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.like-button:hover {
+    color: #e50914;
+    transform: scale(1.1);
+}
+
+.like-button.active {
+    color: #e50914;
+}
+
+/* Scroll buttons */
+.scroll-button {
+    background-color: rgba(28, 28, 28, 0.8);
+    border: none;
+    color: #ffffff;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+}
+
+.scroll-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Search form */
+.search-input {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-weight: 400;
+}
+
+.search-input:focus {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    box-shadow: none;
+}
+
+/* Toast notification */
+.toast {
+    background-color: rgba(28, 28, 28, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1050;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .movie-title {
+        font-size: 1rem;
+    }
+    
+    .movie-list-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* Watch History Styles */
+.clear-history-btn {
+    padding: 0.375rem 1rem;
+    font-size: 0.9rem;
+    border-width: 2px;
+    transition: all 0.3s ease;
+}
+
+.clear-history-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.remove-history-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #e50914;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.movie-card:hover .remove-history-btn {
+    opacity: 1;
+}
+
+.remove-history-btn:hover {
+    background: none;
+    transform: scale(1.2);
+    color: #f40612;
+}
+
+.remove-history-btn i {
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+}
+
+.remove-history-btn:hover i {
+    transform: rotate(90deg);
+}
+
+.btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Auth Buttons Styles */
+.auth-buttons {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+} 

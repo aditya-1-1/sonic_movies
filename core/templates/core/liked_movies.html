@@ -1,0 +1,182 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Liked Movies - Sonic{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Liked Movies</h1>
+    </div>
+</div>
+
+{% if liked_movies %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+    {% for liked in liked_movies %}
+    <div class="col">
+        <div class="movie-card h-100">
+            <img src="{{ liked.movie.poster_path }}" alt="{{ liked.movie.title }}" class="movie-poster">
+            <div class="movie-info">
+                <h5 class="movie-title">{{ liked.movie.title }}</h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="movie-rating">
+                        <i class="fas fa-star"></i> {{ liked.movie.vote_average|floatformat:1 }}
+                    </div>
+                    <small class="text-muted">{{ liked.movie.release_date|date:"Y" }}</small>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        Liked on {{ liked.liked_at|date:"M d, Y" }}
+                    </small>
+                    <button class="btn btn-primary btn-sm w-100 mt-2" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#movieModal{{ liked.movie.tmdb_id }}">
+                        View Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Movie Modal -->
+    <div class="modal fade" id="movieModal{{ liked.movie.tmdb_id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ liked.movie.title }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <img src="{{ liked.movie.poster_path }}" alt="{{ liked.movie.title }}" class="img-fluid rounded">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <span class="badge bg-primary me-2">{{ liked.movie.language|upper }}</span>
+                                {% for genre in liked.movie.genres %}
+                                <span class="badge bg-secondary me-2">{{ genre }}</span>
+                                {% endfor %}
+                            </div>
+                            <p class="mb-3">{{ liked.movie.overview }}</p>
+                            <div class="mb-3">
+                                <strong>Liked on:</strong> {{ liked.liked_at|date:"F d, Y" }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Rating:</strong> 
+                                <span class="movie-rating">
+                                    <i class="fas fa-star"></i> {{ liked.movie.vote_average|floatformat:1 }}
+                                </span>
+                                ({{ liked.movie.vote_count }} votes)
+                            </div>
+                            {% if liked.movie.runtime %}
+                            <div class="mb-3">
+                                <strong>Runtime:</strong> {{ liked.movie.runtime }} minutes
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-primary like-btn" 
+                            data-movie-id="{{ liked.movie.tmdb_id }}"
+                            data-liked="true">
+                        <i class="fas fa-heart"></i>
+                        <span class="like-text">Unlike</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if liked_movies.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if liked_movies.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ liked_movies.previous_page_number }}">Previous</a>
+        </li>
+        {% endif %}
+
+        {% for num in liked_movies.paginator.page_range %}
+        {% if liked_movies.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% else %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {% if liked_movies.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ liked_movies.next_page_number }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+    You haven't liked any movies yet. Start liking movies to build your collection!
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('.like-btn').click(function() {
+        const btn = $(this);
+        const movieId = btn.data('movie-id');
+        const isLiked = btn.data('liked') === true;
+
+        $.ajax({
+            url: `/movie/${movieId}/like/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                if (response.status === 'unliked') {
+                    // Remove the movie card from the page
+                    btn.closest('.col').fadeOut(300, function() {
+                        $(this).remove();
+                        // If no movies left, show the empty message
+                        if ($('.movie-card').length === 0) {
+                            $('.row').html(`
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        You haven't liked any movies yet. Start liking movies to build your collection!
+                                    </div>
+                                </div>
+                            `);
+                        }
+                    });
+                }
+            }
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %} 

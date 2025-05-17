@@ -1,0 +1,277 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Search Results - Sonic{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            {% if query %}
+            Search Results for "{{ query }}"
+            {% else %}
+            Search Movies
+            {% endif %}
+        </h1>
+    </div>
+</div>
+
+{% if query %}
+    {% if movies %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        {% for movie in movies %}
+        <div class="col">
+            <div class="movie-card h-100">
+                <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster">
+                <div class="movie-info">
+                    <h5 class="movie-title">{{ movie.title }}</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="movie-rating">
+                            <i class="fas fa-star"></i> {{ movie.vote_average|floatformat:1 }}
+                        </div>
+                        <small class="text-muted">{{ movie.release_date|date:"Y" }}</small>
+                    </div>
+                    <div class="mt-2">
+                        <button class="btn btn-primary btn-sm w-100" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#movieModal{{ movie.tmdb_id }}">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movie Modal -->
+        <div class="modal fade" id="movieModal{{ movie.tmdb_id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ movie.title }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="img-fluid rounded">
+                            </div>
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <span class="badge bg-primary me-2">{{ movie.language|upper }}</span>
+                                    {% for genre in movie.genres %}
+                                    <span class="badge bg-secondary me-2">{{ genre }}</span>
+                                    {% endfor %}
+                                </div>
+                                <p class="mb-3">{{ movie.overview }}</p>
+                                <div class="mb-3">
+                                    <strong>Release Date:</strong> {{ movie.release_date|date:"F d, Y" }}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Rating:</strong> 
+                                    <span class="movie-rating">
+                                        <i class="fas fa-star"></i> {{ movie.vote_average|floatformat:1 }}
+                                    </span>
+                                    ({{ movie.vote_count }} votes)
+                                </div>
+                                {% if movie.runtime %}
+                                <div class="mb-3">
+                                    <strong>Runtime:</strong> {{ movie.runtime }} minutes
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        {% if user.is_authenticated %}
+                        <button class="like-button {% if movie in user.liked_movies.all %}active{% endif %}" 
+                                data-movie-id="{{ movie.tmdb_id }}"
+                                onclick="toggleLike(this)">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="addToWatchlist('{{ movie.tmdb_id }}')">
+                            <i class="fas fa-clock"></i> Watch Later
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-outline-danger" onclick="showTrailer('{{ movie.tmdb_id }}')">
+                            <i class="fas fa-play"></i> Show Trailer
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if movies.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if movies.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ movies.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in movies.paginator.page_range %}
+            {% if movies.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if movies.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ movies.next_page_number }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info">
+        No movies found matching "{{ query }}". Try a different search term.
+    </div>
+    {% endif %}
+{% else %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card bg-dark">
+            <div class="card-body">
+                <h5 class="card-title text-center mb-4">Search Movies</h5>
+                <form action="{% url 'search_movies' %}" method="GET">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control search-input" placeholder="Enter movie title..." required>
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleLike(button) {
+    const movieId = button.dataset.movieId;
+    fetch(`/api/movie/${movieId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.classList.toggle('active', data.is_liked);
+        // Update all like buttons for this movie
+        document.querySelectorAll(`.like-button[data-movie-id="${movieId}"]`).forEach(btn => {
+            btn.classList.toggle('active', data.is_liked);
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function addToWatchlist(movieId) {
+    fetch(`/api/movie/${movieId}/watchlist/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function showTrailer(movieId) {
+    fetch(`/api/movie/${movieId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.video_url) {
+                const videoContainer = document.createElement('div');
+                videoContainer.className = 'modal fade';
+                videoContainer.id = 'trailerModal';
+                videoContainer.innerHTML = `
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Movie Trailer</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <div class="ratio ratio-16x9">
+                                    <iframe src="${data.video_url}" 
+                                            allowfullscreen 
+                                            class="border-0">
+                                    </iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(videoContainer);
+                const trailerModal = new bootstrap.Modal(videoContainer);
+                trailerModal.show();
+                videoContainer.addEventListener('hidden.bs.modal', function () {
+                    document.body.removeChild(videoContainer);
+                });
+            } else {
+                showToast('No trailer available for this movie', 'warning');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error loading trailer', 'error');
+        });
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toast);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 

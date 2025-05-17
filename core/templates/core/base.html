@@ -1,0 +1,865 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sonic{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
+    <meta name="theme-color" content="#6511ec">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Frijole&family=Chela+One&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #d19300;
+            --secondary-color: #edb73a;
+            --dark-bg: #121212;
+            --darker-bg: #000000;
+            --sidebar-bg: #000000;
+            --sidebar-header-bg: #121212;
+            --light-text: #ffffff;
+            --gray-text: #b3b3b3;
+            --hover-bg: #282828;
+            --card-bg: #181818;
+            --card-hover-bg: #282828;
+        }
+
+        [data-theme="light"] {
+            --dark-bg: #ffffff;
+            --darker-bg: #f5f5f5;
+            --sidebar-bg: #f8f9fa;
+            --sidebar-header-bg: #e9ecef;
+            --light-text: #000000;
+            --gray-text: #6c757d;
+            --hover-bg: #e9ecef;
+            --card-bg: #ffffff;
+            --card-hover-bg: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Chela One', cursive;
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            /* Prevent horizontal scroll */
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 240px;
+            background: var(--sidebar-bg);
+            padding: 20px 0;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+        }
+
+        .sidebar::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari, Edge */
+        }
+
+        .logo {
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .sidebar-nav {
+            padding: 10px 0;
+            background: var(--sidebar-header-bg);
+            border-radius: 15px;
+            margin: 0 10px 15px 10px;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav li {
+            padding: 5px 20px;
+        }
+
+        .sidebar-nav a {
+            color: var(--gray-text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            gap: 10px;
+        }
+
+        .sidebar-nav a:hover {
+            color: var(--light-text);
+            background: var(--hover-bg);
+        }
+
+        .sidebar-nav a.active {
+            color: var(--light-text);
+            background: var(--hover-bg);
+            font-weight: 600;
+        }
+
+        .sidebar-nav i {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            margin-left: 240px;
+            padding: 20px;
+            min-height: 100vh;
+            overflow-y: scroll;
+            /* Enable vertical scroll */
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+        }
+
+        .main-content::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari, Edge */
+        }
+
+        /* Card Styles */
+        .movie-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            width: 200px;
+            /* Smaller card width */
+            flex: 0 0 auto;
+            /* Prevent cards from growing/shrinking */
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        .movie-card:hover {
+            background: var(--card-hover-bg);
+            transform: translateY(-5px);
+            transform: rotatey(360deg);
+
+            transform: scale(1.05);
+        }
+
+        .movie-card img {
+            width: 100%;
+            height: 300px;
+            /* Fixed height for consistency */
+            object-fit: cover;
+        }
+
+        .movie-card .card-body {
+            padding: 12px;
+        }
+
+        .movie-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: var(--light-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        .movie-rating {
+            color: #ffd700;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        /* Horizontal Scrollable Lists */
+        .movie-list-container {
+            position: relative;
+            margin: 20px 0;
+            padding: 0 20px;
+        }
+
+        .movie-list-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--light-text);
+        }
+
+        .movie-list {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding: 10px 0;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+        }
+
+        .movie-list::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari, Edge */
+        }
+
+        .scroll-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary-color);
+            color: var(--light-text);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .scroll-button:hover {
+            opacity: 1;
+        }
+
+        .scroll-left {
+            left: 0;
+        }
+
+        .scroll-right {
+            right: 0;
+        }
+
+        /* Button Styles */
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: var(--light-text);
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            align-items: center;
+            margin-left: 35px;
+            margin-top: 4px;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            background-color: var(--card-bg);
+            color: var(--light-text);
+            border-radius: 12px;
+            font-weight: 100;
+        }
+
+        .modal-header {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            border-bottom: 1px solid var(--hover-bg);
+            padding: 20px;
+        }
+
+        .modal-body {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .modal-footer {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            border-top: 1px solid var(--hover-bg);
+            padding: 20px;
+        }
+
+        /* Auth Buttons */
+        .auth-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .auth-buttons .btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .auth-buttons .btn-outline-light {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .auth-buttons .btn-outline-light:hover {
+            background-color: var(--primary-color);
+            color: var(--light-text);
+        }
+
+        /* Search Form Styles */
+        .search-form {
+            max-width: 500px;
+            margin: 0 auto 30px;
+
+        }
+
+        .search-input {
+            background-color: var(--card-bg);
+            border: 1px solid var(--hover-bg);
+            color: var(whitesmoke);
+            padding: 12px 20px;
+            border-radius: 25px;
+            width: 100%;
+            transition: all 0.3s ease;
+
+        }
+
+        .search-input:focus {
+            background-color: var(white);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(101, 17, 236, 0.25);
+            outline: none;
+        }
+
+        .input-group .btn {
+            position: relative;
+            z-index: 2;
+            height: 52px;
+            margin-top: 0px;
+        }
+
+
+        /* Like Button */
+        .like-button {
+            background: none;
+            border: none;
+            color: var(--gray-text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 5px;
+        }
+
+        .like-button:hover,
+        .like-button.active {
+            color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        /* Watch Now Button */
+        .watch-now-btn {
+            background-color: var(--primary-color);
+            color: var(--light-text);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .watch-now-btn:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 0;
+                padding: 0;
+            }
+
+            .sidebar.active {
+                width: 240px;
+                padding: 20px 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .movie-card {
+                width: 160px;
+            }
+
+            .movie-card img {
+                height: 240px;
+            }
+
+            .auth-buttons {
+                position: static;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+        }
+
+        .social-icons {
+            padding: 30px 50px;
+            margin-bottom: 25px;
+            margin-left: 23px;
+            font-family: var(--font-primary);
+            align-items: center;
+        }
+
+        .social-icons a {
+            color: var(--gray-text);
+            font-size: 18px;
+            margin-right: 20px;
+            transition: all 0.3s ease;
+            font-family: var(--font-primary);
+        }
+
+        .privacy {
+            padding: 0 20px;
+            margin-bottom: 15px;
+            font-family: var(--font-primary);
+            text-align: center;
+        }
+
+        .privacy ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-family: var(--font-primary);
+            text-align: center;
+        }
+
+        .privacy li {
+            margin-bottom: 10px;
+            font-family: var(--font-primary);
+        }
+
+        .privacy p {
+            color: var(--gray-text);
+            font-size: 12px;
+            line-height: 1.4;
+            font-family: var(--font-primary);
+        }
+
+        .copy {
+            padding: 0 20px;
+            font-family: var(--font-primary);
+            text-align: center;
+        }
+
+        .copy p {
+            color: var(--gray-text);
+            font-size: 12px;
+            font-family: var(--font-primary);
+        }
+
+        .remove-history-btn {
+            position: absolute;
+            top: 306px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #e50914;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .movie-card:hover .remove-history-btn {
+            opacity: 1;
+        }
+
+        .remove-history-btn:hover {
+            background: none;
+            transform: scale(1.2);
+            color: #f40612;
+        }
+
+        .remove-history-btn i {
+            font-size: 1.2rem;
+            transition: transform 0.2s ease;
+        }
+
+        .remove-history-btn:hover i {
+            transform: rotate(90deg);
+        }
+
+        @media (max-width: 768px) {
+            .footer {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Auth Buttons -->
+    <div class="auth-buttons">
+        {% if user.is_authenticated %}
+        <span class="username-display" style="color:white;font-size: larger; margin-right:10px; margin-top: 6px; border-bottom: 1px solid var(--primary-color); padding: 2px;">{{ user.username }}</span>
+        <a href="{% url 'logout' %}" class="btn btn-outline-light">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
+        {% else %}
+        <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#loginModal">
+            <i class="fas fa-sign-in-alt me-2"></i>Login
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
+            <i class="fas fa-user-plus me-2"></i>Register
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <a href="{% url 'home' %}">
+                <img src="{% static 'images/newlogo.jpg' %}" alt="Sonic Logo">
+            </a>
+        </div>
+        <div class="sidebar-nav">
+            <ul>
+                <li>
+                    <a href="{% url 'home' %}"
+                        class="nav-link {% if request.path == '/' or request.path == '/home/' %}active{% endif %}">
+                        <i class="fa-solid fa-house"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'library' %}" class="nav-link {% if 'library' in request.path %}active{% endif %}">
+                        <i class="fa-solid fa-film"></i>
+                        <span>Your Library</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="sidebar-nav">
+            <ul>
+                <li>
+                    <a href="{% url 'watch_history' %}"
+                        class="nav-link {% if 'watch-history' in request.path %}active{% endif %}">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Watch History</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'liked_movies' %}"
+                        class="nav-link {% if 'liked-movies' in request.path %}active{% endif %}">
+                        <i class="fa-solid fa-heart"></i>
+                        <span>Liked Movies</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="social-icons">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+        </div>
+
+        <div class="privacy">
+            <ul>
+                <li>
+                    <p>Legal &nbsp;&nbsp; Safety & Privacy Centre &nbsp;&nbsp; Privacy policy</p>
+                </li>
+                <li>
+                    <p>Cookies &nbsp;&nbsp; About Ads &nbsp;&nbsp; Accessibility</p>
+                </li>
+            </ul>
+        </div>
+        <div class="copy">
+            <p>&nbsp; &nbsp;&nbsp;Copyright © 2024 Sonic (All rights reserved)</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% url 'login' %}" id="loginForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="loginEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="loginEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="loginPassword" name="password" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p>Don't have an account? <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal"
+                                data-bs-dismiss="modal">Register here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Register</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% url 'register' %}" id="registerForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="registerUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="registerUsername" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="registerEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="registerPassword" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerPassword2" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="registerPassword2" name="password2"
+                                required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p>Already have an account? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal"
+                                data-bs-dismiss="modal">Login here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5 py-4"
+        style="background-color: #0a0a0a; border-top: 1px solid #333; margin-left: 240px; color: white;">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="text-white mb-3">About Sonic</h5>
+                    <p class="text-white" style="opacity: 0.8;">
+                        Your ultimate destination for streaming movies and TV shows.
+                        Discover, watch, and enjoy your favorite content anytime, anywhere.
+                    </p>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h5 class="text-white mb-3">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'home' %}" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Home</a></li>
+                        <li class="mb-2"><a href="{% url 'library' %}" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Library</a></li>
+                        <li class="mb-2"><a href="{% url 'watch_history' %}" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Watch History</a></li>
+                        <li class="mb-2"><a href="{% url 'liked_movies' %}" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Liked Movies</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h5 class="text-white mb-3">Categories</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Action</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Comedy</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Drama</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Horror</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="text-white mb-3">Connect With Us</h5>
+                    <div class="d-flex gap-3 mb-3">
+                        <a href="#" class="text-white" style="opacity: 0.8;"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-white" style="opacity: 0.8;"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="https://www.instagram.com/aditya__goyal_1?igsh=MTY1Zzl4Y2hpenkzbQ==q"
+                            class="text-white" style="opacity: 0.8;"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white" style="opacity: 0.8;"><i class="fab fa-youtube fa-lg"></i></a>
+                    </div>
+                    <p class="text-white mb-0" style="opacity: 0.8;">
+                        Subscribe to our newsletter for updates and exclusive content.
+                    </p>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: #333;">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-white mb-0" style="opacity: 0.8;">
+                        &copy; 2024 Sonic. All rights reserved.
+                    </p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <ul class="list-inline mb-0">
+                        <li class="list-inline-item"><a href="#" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Privacy Policy</a></li>
+                        <li class="list-inline-item"><span class="text-white" style="opacity: 0.8;">•</span></li>
+                        <li class="list-inline-item"><a href="#" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Terms of Service</a></li>
+                        <li class="list-inline-item"><span class="text-white" style="opacity: 0.8;">•</span></li>
+                        <li class="list-inline-item"><a href="#" class="text-white text-decoration-none"
+                                style="opacity: 0.8;">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Handle login form submission
+        $('#loginForm').on('submit', function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        window.location.reload();
+                    } else {
+                        alert(response.error || 'Login failed. Please try again.');
+                    }
+                },
+                error: function (xhr) {
+                    console.log('Error:', xhr.status, xhr.responseText);
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        alert(response.error || 'An error occurred. Please try again.');
+                    } catch (e) {
+                        alert('An error occurred. Please try again.');
+                    }
+                }
+            });
+        });
+
+        // Handle register form submission
+        $('#registerForm').on('submit', function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        window.location.reload();
+                    } else {
+                        alert(response.error || 'Registration failed. Please try again.');
+                    }
+                },
+                error: function (xhr) {
+                    console.log('Error:', xhr.status, xhr.responseText);
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        alert(response.error || 'An error occurred. Please try again.');
+                    } catch (e) {
+                        alert('An error occurred. Please try again.');
+                    }
+                }
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>
