@@ -425,6 +425,7 @@ def signup(request):
     return render(request, 'core/register.html')
 
 def user_logout(request):
+    """Custom logout view that handles both GET and POST requests."""
     logout(request)
     return redirect('home')
 

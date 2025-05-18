@@ -30,7 +30,7 @@ urlpatterns = [
 
     # Django Authentication URLs
     path('accounts/login/', auth_views.LoginView.as_view(template_name='core/registration/login.html'), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+    path('accounts/logout/', views.user_logout, name='logout'),
     # Include other authentication URLs like password reset, change, etc.
     path('accounts/', include('django.contrib.auth.urls')),
 ]
