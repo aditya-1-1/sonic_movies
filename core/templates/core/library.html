@@ -4,130 +4,131 @@
 {% block title %}Your Library - Sonic{% endblock %}
 
 {% block content %}
+{% if user.is_authenticated %}
 <div class="container-fluid">
-    <!-- Watchlist Section -->
-    <div class="movie-list-container">
-        <h2 class="movie-list-title">Your Watchlist</h2>
-        <button class="scroll-button scroll-left"><i class="fas fa-chevron-left"></i></button>
-        <div class="movie-list">
-            {% for watchlist_movie in watchlist_movies %}
-            <div class="movie-card">
-                <img src="{{ watchlist_movie.movie.poster_path }}" alt="{{ watchlist_movie.movie.title }}" class="card-img-top">
-                <div class="card-body">
-                    <h5 class="movie-title">{{ watchlist_movie.movie.title }}</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="movie-rating">
-                            <i class="fas fa-star"></i> {{ watchlist_movie.movie.vote_average|floatformat:1 }}
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">My Library</h2>
+            
+            <!-- Watchlist Section -->
+            <div class="mb-5">
+                <h3 class="mb-3">Watchlist</h3>
+                <div class="movie-list-container">
+                    {% if watchlist_movies %}
+                        <div class="row">
+                            {% for watchlist in watchlist_movies %}
+                                <div class="col-6 col-md-4 col-lg-3 mb-4">
+                                    <div class="movie-card">
+                                        <img src="{{ watchlist.movie.poster_url }}" alt="{{ watchlist.movie.title }}" class="movie-poster">
+                                        <div class="movie-info">
+                                            <h5>{{ watchlist.movie.title }}</h5>
+                                            <p>Added: {{ watchlist.added_at|date:"M d, Y" }}</p>
+                                            <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ watchlist.movie.id }}')">
+                                                View Details
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
-                        <button class="like-button {% if watchlist_movie.movie in user.liked_movies.all %}active{% endif %}" 
-                                data-movie-id="{{ watchlist_movie.movie.tmdb_id }}"
-                                onclick="toggleLike(this)">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-overlay">
-                    <button class="btn btn-primary" onclick="showMovieDetails('{{ watchlist_movie.movie.tmdb_id }}')">
-                        View Details
-                    </button>
+                    {% else %}
+                        <div class="text-center">
+                            <p>Your watchlist is empty.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
-            {% empty %}
-            <div class="col-12 text-center py-5">
-                <i class="fas fa-film fa-3x mb-3" style="color: var(--gray-text);"></i>
-                <h4 class="text-muted">Your watchlist is empty</h4>
-                <p class="text-muted">Add movies to your watchlist to see them here</p>
-            </div>
-            {% endfor %}
-        </div>
-        <button class="scroll-button scroll-right"><i class="fas fa-chevron-right"></i></button>
-    </div>
 
-    <!-- Liked Movies Section -->
-    <div class="movie-list-container">
-        <h2 class="movie-list-title">Liked Movies</h2>
-        <button class="scroll-button scroll-left"><i class="fas fa-chevron-left"></i></button>
-        <div class="movie-list">
-            {% for liked_movie in liked_movies %}
-            <div class="movie-card">
-                <img src="{{ liked_movie.movie.poster_path }}" alt="{{ liked_movie.movie.title }}" class="card-img-top">
-                <div class="card-body">
-                    <h5 class="movie-title">{{ liked_movie.movie.title }}</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="movie-rating">
-                            <i class="fas fa-star"></i> {{ liked_movie.movie.vote_average|floatformat:1 }}
+            <!-- Liked Movies Section -->
+            <div class="mb-5">
+                <h3 class="mb-3">Liked Movies</h3>
+                <div class="movie-list-container">
+                    {% if liked_movies %}
+                        <div class="row">
+                            {% for liked in liked_movies %}
+                                <div class="col-6 col-md-4 col-lg-3 mb-4">
+                                    <div class="movie-card">
+                                        <img src="{{ liked.movie.poster_url }}" alt="{{ liked.movie.title }}" class="movie-poster">
+                                        <div class="movie-info">
+                                            <h5>{{ liked.movie.title }}</h5>
+                                            <p>Liked: {{ liked.liked_at|date:"M d, Y" }}</p>
+                                            <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ liked.movie.id }}')">
+                                                View Details
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
-                        <button class="like-button active" 
-                                data-movie-id="{{ liked_movie.movie.tmdb_id }}"
-                                onclick="toggleLike(this)">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-overlay">
-                    <button class="btn btn-primary" onclick="showMovieDetails('{{ liked_movie.movie.tmdb_id }}')">
-                        View Details
-                    </button>
+                    {% else %}
+                        <div class="text-center">
+                            <p>You haven't liked any movies yet.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
-            {% empty %}
-            <div class="col-12 text-center py-5">
-                <i class="fas fa-heart fa-3x mb-3" style="color: var(--gray-text);"></i>
-                <h4 class="text-muted">No liked movies yet</h4>
-                <p class="text-muted">Like movies to see them here</p>
-            </div>
-            {% endfor %}
         </div>
-        <button class="scroll-button scroll-right"><i class="fas fa-chevron-right"></i></button>
     </div>
 </div>
 
 <!-- Movie Details Modal -->
-<div class="modal fade" id="movieModal" tabindex="-1">
+<div class="modal fade" id="movieDetailsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="movieTitle"></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Movie Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <img id="moviePoster" src="" alt="" class="img-fluid rounded">
-                    </div>
-                    <div class="col-md-8">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h6 class="mb-2">Release Date: <span id="movieReleaseDate"></span></h6>
-                                <h6 class="mb-2">Rating: <span id="movieRating"></span></h6>
-                                <h6 class="mb-2">Runtime: <span id="movieRuntime"></span></h6>
-                                <h6 class="mb-2">Genres: <span id="movieGenres"></span></h6>
-                            </div>
-                            <button class="like-button" id="modalLikeButton" onclick="toggleLike(this)">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                        </div>
-                        <p id="movieOverview" class="mb-4"></p>
-                        <div class="d-flex gap-3">
-                            <button class="watch-now-btn" id="watchNowBtn">
-                                <i class="fas fa-play"></i> Watch Now
-                            </button>
-                            <button class="btn btn-outline-light" onclick="toggleWatchlist()" id="watchlistBtn">
-                                <i class="fas fa-plus"></i> Add to Watchlist
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Video Player -->
-                <div class="mt-4" id="videoContainer" style="display: none;">
-                    <div class="ratio ratio-16x9">
-                        <iframe id="videoPlayer" src="" allowfullscreen></iframe>
-                    </div>
-                </div>
+            <div class="modal-body" id="movieDetailsContent">
+                <!-- Content will be loaded dynamically -->
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function showMovieDetails(movieId) {
+    fetch(`/api/movie/${movieId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const modal = new bootstrap.Modal(document.getElementById('movieDetailsModal'));
+            document.getElementById('movieDetailsContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <img src="${data.poster_url}" alt="${data.title}" class="img-fluid">
+                    </div>
+                    <div class="col-md-8">
+                        <h4>${data.title}</h4>
+                        <p><strong>Rating:</strong> ${data.rating}/10</p>
+                        <p><strong>Release Date:</strong> ${data.release_date}</p>
+                        <p><strong>Overview:</strong> ${data.overview}</p>
+                    </div>
+                </div>
+            `;
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load movie details. Please try again.');
+        });
+}
+</script>
+{% else %}
+<div class="container text-center py-5">
+    <h2>Login Required</h2>
+    <p>Please log in to view your library.</p>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
+        <i class="fas fa-sign-in-alt"></i> Login
+    </button>
+</div>
+<script>
+    // Show login modal automatically
+    document.addEventListener('DOMContentLoaded', function() {
+        var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    });
+</script>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

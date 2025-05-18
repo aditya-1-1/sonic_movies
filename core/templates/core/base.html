@@ -611,9 +611,9 @@
         </div>
 
         <div class="social-icons">
-            <a href="#"><i class="fab fa-facebook-f"></i></a>
-            <a href="#"><i class="fab fa-twitter"></i></a>
-            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            <a href="https://www.linkedin.com/in/aditya-goyal-ab1693313"><i class="fab fa-linkedin-f"></i></a>
+            <a href="https://x.com/goya68580"><i class="fab fa-twitter"></i></a>
+            <a href="linkedin.com/in/aditya-goyal-ab1693313"><i class="fab fa-linkedin-in"></i></a>
         </div>
 
         <div class="privacy">
@@ -761,11 +761,10 @@
                 <div class="col-md-4">
                     <h5 class="text-white mb-3">Connect With Us</h5>
                     <div class="d-flex gap-3 mb-3">
-                        <a href="#" class="text-white" style="opacity: 0.8;"><i class="fab fa-facebook fa-lg"></i></a>
-                        <a href="#" class="text-white" style="opacity: 0.8;"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="https://x.com/goya68580" class="text-white" style="opacity: 0.8;"><i class="fab fa-twitter fa-lg"></i></a>
                         <a href="https://www.instagram.com/aditya__goyal_1?igsh=MTY1Zzl4Y2hpenkzbQ==q"
                             class="text-white" style="opacity: 0.8;"><i class="fab fa-instagram fa-lg"></i></a>
-                        <a href="#" class="text-white" style="opacity: 0.8;"><i class="fab fa-youtube fa-lg"></i></a>
+                        <a href="linkedin.com/in/aditya-goyal-ab1693313" class="text-white" style="opacity: 0.8;"><i class="fab fa-linkedin fa-lg"></i></a>
                     </div>
                     <p class="text-white mb-0" style="opacity: 0.8;">
                         Subscribe to our newsletter for updates and exclusive content.
@@ -812,7 +811,8 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        window.location.reload();
+                        $('#loginModal').modal('hide');
+                        window.location.href = response.redirect || '/';
                     } else {
                         alert(response.error || 'Login failed. Please try again.');
                     }
@@ -842,7 +842,8 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        window.location.reload();
+                        $('#registerModal').modal('hide');
+                        window.location.href = response.redirect || '/';
                     } else {
                         alert(response.error || 'Registration failed. Please try again.');
                     }

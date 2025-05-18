@@ -405,30 +405,62 @@ def signup(request):
 
             # Validate input
             if not all([username, email, password, password2]):
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': "All fields are required!"
+                    })
                 messages.error(request, "All fields are required!")
                 return redirect('register')
 
             if password != password2:
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': "Passwords don't match!"
+                    })
                 messages.error(request, "Passwords don't match!")
                 return redirect('register')
 
             # Check if username or email already exists
             if User.objects.filter(username=username).exists():
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': "Username already exists!"
+                    })
                 messages.error(request, "Username already exists!")
                 return redirect('register')
 
             if User.objects.filter(email=email).exists():
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': "Email already registered!"
+                    })
                 messages.error(request, "Email already registered!")
                 return redirect('register')
 
             # Create user
             user = User.objects.create_user(username=username, email=email, password=password)
             login(request, user)
+            
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': "Registration successful!",
+                    'redirect': '/'
+                })
             messages.success(request, "Registration successful!")
             return redirect('home')
             
         except Exception as e:
             logger.error(f"Error creating user: {str(e)}")
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': "Registration failed. Please try again."
+                })
             messages.error(request, "Registration failed. Please try again.")
             return redirect('register')
 

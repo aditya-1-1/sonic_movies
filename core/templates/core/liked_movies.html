@@ -3,128 +3,96 @@
 {% block title %}Liked Movies - Sonic{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">Liked Movies</h1>
-    </div>
-</div>
-
-{% if liked_movies %}
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
-    {% for liked in liked_movies %}
-    <div class="col">
-        <div class="movie-card h-100">
-            <img src="{{ liked.movie.poster_path }}" alt="{{ liked.movie.title }}" class="movie-poster">
-            <div class="movie-info">
-                <h5 class="movie-title">{{ liked.movie.title }}</h5>
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="movie-rating">
-                        <i class="fas fa-star"></i> {{ liked.movie.vote_average|floatformat:1 }}
-                    </div>
-                    <small class="text-muted">{{ liked.movie.release_date|date:"Y" }}</small>
-                </div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        Liked on {{ liked.liked_at|date:"M d, Y" }}
-                    </small>
-                    <button class="btn btn-primary btn-sm w-100 mt-2" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#movieModal{{ liked.movie.tmdb_id }}">
-                        View Details
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Movie Modal -->
-    <div class="modal fade" id="movieModal{{ liked.movie.tmdb_id }}" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ liked.movie.title }}</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
+{% if user.is_authenticated %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Liked Movies</h2>
+            <div class="movie-list-container">
+                {% if liked_movies %}
                     <div class="row">
-                        <div class="col-md-4">
-                            <img src="{{ liked.movie.poster_path }}" alt="{{ liked.movie.title }}" class="img-fluid rounded">
-                        </div>
-                        <div class="col-md-8">
-                            <div class="mb-3">
-                                <span class="badge bg-primary me-2">{{ liked.movie.language|upper }}</span>
-                                {% for genre in liked.movie.genres %}
-                                <span class="badge bg-secondary me-2">{{ genre }}</span>
-                                {% endfor %}
+                        {% for liked in liked_movies %}
+                            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                                <div class="movie-card">
+                                    <img src="{{ liked.movie.poster_url }}" alt="{{ liked.movie.title }}" class="movie-poster">
+                                    <div class="movie-info">
+                                        <h5>{{ liked.movie.title }}</h5>
+                                        <p>Liked: {{ liked.liked_at|date:"M d, Y" }}</p>
+                                        <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ liked.movie.id }}')">
+                                            View Details
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <p class="mb-3">{{ liked.movie.overview }}</p>
-                            <div class="mb-3">
-                                <strong>Liked on:</strong> {{ liked.liked_at|date:"F d, Y" }}
-                            </div>
-                            <div class="mb-3">
-                                <strong>Rating:</strong> 
-                                <span class="movie-rating">
-                                    <i class="fas fa-star"></i> {{ liked.movie.vote_average|floatformat:1 }}
-                                </span>
-                                ({{ liked.movie.vote_count }} votes)
-                            </div>
-                            {% if liked.movie.runtime %}
-                            <div class="mb-3">
-                                <strong>Runtime:</strong> {{ liked.movie.runtime }} minutes
-                            </div>
-                            {% endif %}
-                        </div>
+                        {% endfor %}
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline-primary like-btn" 
-                            data-movie-id="{{ liked.movie.tmdb_id }}"
-                            data-liked="true">
-                        <i class="fas fa-heart"></i>
-                        <span class="like-text">Unlike</span>
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+                {% else %}
+                    <div class="text-center">
+                        <p>You haven't liked any movies yet.</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
-    {% endfor %}
 </div>
 
-{% if liked_movies.has_other_pages %}
-<nav class="mt-4">
-    <ul class="pagination justify-content-center">
-        {% if liked_movies.has_previous %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ liked_movies.previous_page_number }}">Previous</a>
-        </li>
-        {% endif %}
+<!-- Movie Details Modal -->
+<div class="modal fade" id="movieDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Movie Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="movieDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
 
-        {% for num in liked_movies.paginator.page_range %}
-        {% if liked_movies.number == num %}
-        <li class="page-item active">
-            <span class="page-link">{{ num }}</span>
-        </li>
-        {% else %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-        </li>
-        {% endif %}
-        {% endfor %}
-
-        {% if liked_movies.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ liked_movies.next_page_number }}">Next</a>
-        </li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
-
+<script>
+function showMovieDetails(movieId) {
+    fetch(`/api/movie/${movieId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const modal = new bootstrap.Modal(document.getElementById('movieDetailsModal'));
+            document.getElementById('movieDetailsContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <img src="${data.poster_url}" alt="${data.title}" class="img-fluid">
+                    </div>
+                    <div class="col-md-8">
+                        <h4>${data.title}</h4>
+                        <p><strong>Rating:</strong> ${data.rating}/10</p>
+                        <p><strong>Release Date:</strong> ${data.release_date}</p>
+                        <p><strong>Overview:</strong> ${data.overview}</p>
+                    </div>
+                </div>
+            `;
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load movie details. Please try again.');
+        });
+}
+</script>
 {% else %}
-<div class="alert alert-info">
-    You haven't liked any movies yet. Start liking movies to build your collection!
+<div class="container text-center py-5">
+    <h2>Login Required</h2>
+    <p>Please log in to view your liked movies.</p>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
+        <i class="fas fa-sign-in-alt"></i> Login
+    </button>
 </div>
+<script>
+    // Show login modal automatically
+    document.addEventListener('DOMContentLoaded', function() {
+        var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    });
+</script>
 {% endif %}
 {% endblock %}
 

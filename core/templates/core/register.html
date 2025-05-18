@@ -1,40 +1,47 @@
-{% extends 'core/base.html' %}
+{% extends "core/base.html" %}
 
 {% block title %}Register - Sonic{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card bg-dark">
-            <div class="card-body">
-                <h2 class="card-title text-center mb-4">Register</h2>
-                <form method="POST" action="{% url 'register' %}">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control search-input" id="username" name="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control search-input" id="email" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control search-input" id="password" name="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password2" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control search-input" id="password2" name="password2" required>
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Register</button>
-                    </div>
-                </form>
-                <div class="text-center mt-3">
-                    <p>Already have an account? <a href="{% url 'login' %}" class="text-primary">Login here</a></p>
-                </div>
+{% if user.is_authenticated %}
+    <script>
+        window.location.href = "{% url 'home' %}";
+    </script>
+{% else %}
+<div class="auth-container">
+    <div class="auth-box">
+        <h2 class="auth-title">Register</h2>
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                Please correct the errors below.
             </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_username">Username:</label>
+                {{ form.username }}
+            </div>
+            <div class="form-group">
+                <label for="id_email">Email:</label>
+                {{ form.email }}
+            </div>
+            <div class="form-group">
+                <label for="id_password1">Password:</label>
+                {{ form.password1 }}
+            </div>
+            <div class="form-group">
+                <label for="id_password2">Confirm Password:</label>
+                {{ form.password2 }}
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+        </form>
+        
+        <div class="auth-links">
+            <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %} 

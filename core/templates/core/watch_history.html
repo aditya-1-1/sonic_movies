@@ -4,205 +4,107 @@
 {% block title %}Watch History - Sonic{% endblock %}
 
 {% block content %}
+{% if user.is_authenticated %}
 <div class="container-fluid">
-    <div class="movie-list-container">
-        <div class="d-flex justify-content-between align-items-center mb-4 px-3">
-            <div class="d-flex align-items-center gap-3">
-                <h2 class="movie-list-title mb-0">Recently Watched</h2>
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Watch History</h2>
+            <div class="movie-list-container">
                 {% if history %}
-                <button class="btn btn-outline-danger clear-history-btn" onclick="clearHistory()">
-                    <i class="fas fa-trash"></i> Clear History
-                </button>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button class="btn btn-danger" onclick="clearHistory()">
+                            <i class="fas fa-trash"></i> Clear History
+                        </button>
+                    </div>
+                    <div class="row">
+                        {% for entry in history %}
+                            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                                <div class="movie-card">
+                                    <img src="{{ entry.movie.poster_url }}" alt="{{ entry.movie.title }}" class="movie-poster">
+                                    <div class="movie-info">
+                                        <h5>{{ entry.movie.title }}</h5>
+                                        <p>Watched: {{ entry.watched_at|date:"M d, Y" }}</p>
+                                        <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ entry.movie.id }}')">
+                                            View Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <p>Your watch history is empty.</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
-        <button class="scroll-button scroll-left"><i class="fas fa-chevron-left"></i></button>
-        <div class="movie-list">
-            {% for entry in history %}
-            <div class="movie-card" data-movie-id="{{ entry.movie.tmdb_id }}">
-                <button class="remove-history-btn" onclick="removeFromHistory('{{ entry.movie.tmdb_id }}')">
-                    <i class="fas fa-times"></i>
-                </button>
-                <img src="{{ entry.movie.poster_path }}" alt="{{ entry.movie.title }}" class="card-img-top">
-                <div class="card-body">
-                    <h5 class="movie-title">{{ entry.movie.title }}</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="movie-rating">
-                            <i class="fas fa-star"></i> {{ entry.movie.vote_average|floatformat:1 }}
-                        </div>
-                        <button class="like-button {% if entry.movie in user.liked_movies.all %}active{% endif %}" 
-                                data-movie-id="{{ entry.movie.tmdb_id }}"
-                                onclick="toggleLike(this)">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                    </div>
-                    <small class="text-muted d-block mt-2">
-                        Watched {{ entry.watched_at|timesince }} ago
-                    </small>
-                </div>
-                <div class="card-overlay">
-                    <button class="btn btn-primary" onclick="showMovieDetails('{{ entry.movie.tmdb_id }}')">
-                        View Details
-                    </button>
-                </div>
-            </div>
-            {% empty %}
-            <div class="col-12 text-center py-5">
-                <i class="fas fa-history fa-3x mb-3" style="color: var(--gray-text);"></i>
-                <h4 class="text-muted">No watch history yet</h4>
-                <p class="text-muted">Watch movies to see them here</p>
-            </div>
-            {% endfor %}
-        </div>
-        <button class="scroll-button scroll-right"><i class="fas fa-chevron-right"></i></button>
     </div>
 </div>
 
 <!-- Movie Details Modal -->
-<div class="modal fade" id="movieModal" tabindex="-1">
+<div class="modal fade" id="movieDetailsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="movieTitle"></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Movie Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <img id="moviePoster" src="" alt="" class="img-fluid rounded">
-                    </div>
-                    <div class="col-md-8">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h6 class="mb-2">Release Date: <span id="movieReleaseDate"></span></h6>
-                                <h6 class="mb-2">Rating: <span id="movieRating"></span></h6>
-                                <h6 class="mb-2">Runtime: <span id="movieRuntime"></span></h6>
-                                <h6 class="mb-2">Genres: <span id="movieGenres"></span></h6>
-                            </div>
-                            <button class="like-button" id="modalLikeButton" onclick="toggleLike(this)">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                        </div>
-                        <p id="movieOverview" class="mb-4"></p>
-                        <div class="d-flex gap-3">
-                            <button class="watch-now-btn" id="watchNowBtn">
-                                <i class="fas fa-play"></i> Watch Now
-                            </button>
-                            <button class="btn btn-outline-light" onclick="addToWatchlist()">
-                                <i class="fas fa-plus"></i> Add to Watchlist
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Video Player -->
-                <div class="mt-4" id="videoContainer" style="display: none;">
-                    <div class="ratio ratio-16x9">
-                        <iframe id="videoPlayer" src="" allowfullscreen></iframe>
-                    </div>
-                </div>
+            <div class="modal-body" id="movieDetailsContent">
+                <!-- Content will be loaded dynamically -->
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-let currentMovieId = null;
-
 function showMovieDetails(movieId) {
-    currentMovieId = movieId;
     fetch(`/api/movie/${movieId}/`)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('movieTitle').textContent = data.title;
-            document.getElementById('moviePoster').src = data.poster_path;
-            document.getElementById('movieReleaseDate').textContent = data.release_date;
-            document.getElementById('movieRating').textContent = `${data.vote_average} (${data.vote_count} votes)`;
-            document.getElementById('movieRuntime').textContent = `${data.runtime} minutes`;
-            document.getElementById('movieGenres').textContent = data.genres.join(', ');
-            document.getElementById('movieOverview').textContent = data.overview;
-            
-            // Update like button state
-            const likeButton = document.getElementById('modalLikeButton');
-            likeButton.classList.toggle('active', data.is_liked);
-            likeButton.dataset.movieId = movieId;
-
-            // Show/hide watch now button based on video availability
-            const watchNowBtn = document.getElementById('watchNowBtn');
-            if (data.video_url) {
-                watchNowBtn.style.display = 'flex';
-                watchNowBtn.onclick = () => playVideo(data.video_url);
-            } else {
-                watchNowBtn.style.display = 'none';
-            }
-
-            // Show modal
-            new bootstrap.Modal(document.getElementById('movieModal')).show();
+            const modal = new bootstrap.Modal(document.getElementById('movieDetailsModal'));
+            document.getElementById('movieDetailsContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <img src="${data.poster_url}" alt="${data.title}" class="img-fluid">
+                    </div>
+                    <div class="col-md-8">
+                        <h4>${data.title}</h4>
+                        <p><strong>Rating:</strong> ${data.rating}/10</p>
+                        <p><strong>Release Date:</strong> ${data.release_date}</p>
+                        <p><strong>Overview:</strong> ${data.overview}</p>
+                    </div>
+                </div>
+            `;
+            modal.show();
         })
-        .catch(error => console.error('Error:', error));
-}
-
-function toggleLike(button) {
-    const movieId = button.dataset.movieId;
-    fetch(`/api/movie/${movieId}/like/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        button.classList.toggle('active', data.is_liked);
-        // Update all like buttons for this movie
-        document.querySelectorAll(`.like-button[data-movie-id="${movieId}"]`).forEach(btn => {
-            btn.classList.toggle('active', data.is_liked);
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load movie details. Please try again.');
         });
-    })
-    .catch(error => console.error('Error:', error));
 }
 
-function addToWatchlist() {
-    if (!currentMovieId) return;
-    
-    fetch(`/api/movie/${currentMovieId}/watchlist/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message);
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function playVideo(videoUrl) {
-    const container = document.getElementById('videoContainer');
-    const player = document.getElementById('videoPlayer');
-    container.style.display = 'block';
-    player.src = videoUrl;
-}
-
-function showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'toast position-fixed bottom-0 end-0 m-3';
-    toast.setAttribute('role', 'alert');
-    toast.innerHTML = `
-        <div class="toast-header">
-            <strong class="me-auto">Sonic</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-        </div>
-        <div class="toast-body">${message}</div>
-    `;
-    document.body.appendChild(toast);
-    new bootstrap.Toast(toast).show();
-    toast.addEventListener('hidden.bs.toast', () => toast.remove());
+function clearHistory() {
+    if (confirm('Are you sure you want to clear your watch history?')) {
+        fetch('/api/clear-history/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to clear history. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to clear history. Please try again.');
+        });
+    }
 }
 
 function getCookie(name) {
@@ -219,97 +121,21 @@ function getCookie(name) {
     }
     return cookieValue;
 }
-
-// Close video player when modal is closed
-document.getElementById('movieModal').addEventListener('hidden.bs.modal', function () {
-    const container = document.getElementById('videoContainer');
-    const player = document.getElementById('videoPlayer');
-    container.style.display = 'none';
-    player.src = '';
-    currentMovieId = null;
-});
-
-function clearHistory() {
-    if (!confirm('Are you sure you want to clear your entire watch history?')) {
-        return;
-    }
-    
-    fetch('/api/history/clear/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message);
-            // Remove all movie cards
-            document.querySelectorAll('.movie-card').forEach(card => card.remove());
-            // Show empty state
-            const movieList = document.querySelector('.movie-list');
-            movieList.innerHTML = `
-                <div class="col-12 text-center py-5">
-                    <i class="fas fa-history fa-3x mb-3" style="color: var(--gray-text);"></i>
-                    <h4 class="text-muted">No watch history yet</h4>
-                    <p class="text-muted">Watch movies to see them here</p>
-                </div>
-            `;
-            // Hide clear history button
-            document.querySelector('.btn-outline-danger').style.display = 'none';
-        } else {
-            showToast(data.error, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Failed to clear history. Please try again.', 'error');
-    });
-}
-
-function removeFromHistory(movieId) {
-    if (!confirm('Are you sure you want to remove this movie from your history?')) {
-        return;
-    }
-    
-    fetch(`/api/history/remove/${movieId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message);
-            // Remove the movie card
-            const movieCard = document.querySelector(`.movie-card[data-movie-id="${movieId}"]`);
-            if (movieCard) {
-                movieCard.remove();
-            }
-            // If no more movies, show empty state
-            const movieList = document.querySelector('.movie-list');
-            if (movieList.children.length === 0) {
-                movieList.innerHTML = `
-                    <div class="col-12 text-center py-5">
-                        <i class="fas fa-history fa-3x mb-3" style="color: var(--gray-text);"></i>
-                        <h4 class="text-muted">No watch history yet</h4>
-                        <p class="text-muted">Watch movies to see them here</p>
-                    </div>
-                `;
-                // Hide clear history button
-                document.querySelector('.btn-outline-danger').style.display = 'none';
-            }
-        } else {
-            showToast(data.error, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Failed to remove movie from history. Please try again.', 'error');
-    });
-}
 </script>
+{% else %}
+<div class="container text-center py-5">
+    <h2>Login Required</h2>
+    <p>Please log in to view your watch history.</p>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
+        <i class="fas fa-sign-in-alt"></i> Login
+    </button>
+</div>
+<script>
+    // Show login modal automatically
+    document.addEventListener('DOMContentLoaded', function() {
+        var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    });
+</script>
+{% endif %}
 {% endblock %} 
