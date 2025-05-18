@@ -18,6 +18,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from .tmdb_utils import TMDBAPI
 from django.contrib import messages
+from functools import wraps
+from django.urls import reverse
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -212,7 +214,15 @@ def update_watch_history(request, movie_id):
             return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-@login_required
+def login_required_with_modal(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect(reverse('home') + '?show_login=true')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+@login_required_with_modal
 def watch_history(request):
     """User's watch history view."""
     try:
@@ -223,7 +233,7 @@ def watch_history(request):
         messages.error(request, "Failed to load watch history. Please try again later.")
         return render(request, 'core/error.html', {'error': str(e)})
 
-@login_required
+@login_required_with_modal
 def liked_movies(request):
     """User's liked movies view."""
     try:
@@ -233,6 +243,28 @@ def liked_movies(request):
         logger.error(f"Error in liked movies view: {str(e)}")
         messages.error(request, "Failed to load liked movies. Please try again later.")
         return render(request, 'core/error.html', {'error': str(e)})
+
+@login_required_with_modal
+def library(request):
+    try:
+        # Get user's watchlist movies
+        watchlist_movies = WatchlistMovie.objects.filter(
+            watchlist__user=request.user
+        ).select_related('movie').order_by('-added_at')
+
+        # Get user's liked movies
+        liked_movies = LikedMovie.objects.filter(
+            user=request.user
+        ).select_related('movie').order_by('-liked_at')
+
+        context = {
+            'watchlist_movies': watchlist_movies,
+            'liked_movies': liked_movies,
+        }
+        return render(request, 'core/library.html', context)
+    except Exception as e:
+        logger.error(f"Error in library view: {str(e)}")
+        return render(request, 'core/error.html', {'error': 'Unable to load your library. Please try again later.'})
 
 def search_movies(request):
     query = request.GET.get('q', '')
@@ -323,33 +355,10 @@ def remove_from_watchlist(request, watchlist_id, movie_id):
         return JsonResponse({'status': 'success'})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-@login_required
-def library(request):
-    try:
-        # Get user's watchlist movies
-        watchlist_movies = WatchlistMovie.objects.filter(
-            watchlist__user=request.user
-        ).select_related('movie').order_by('-added_at')
-
-        # Get user's liked movies
-        liked_movies = LikedMovie.objects.filter(
-            user=request.user
-        ).select_related('movie').order_by('-liked_at')
-
-        context = {
-            'watchlist_movies': watchlist_movies,
-            'liked_movies': liked_movies,
-        }
-        return render(request, 'core/library.html', context)
-    except Exception as e:
-        logger.error(f"Error in library view: {str(e)}")
-        return render(request, 'core/error.html', {'error': 'Unable to load your library. Please try again later.'})
-
-
 def user_login(request):
     """Handle login requests via AJAX and regular form submissions."""
     if request.method == "POST":
-        username_or_email = request.POST.get('username')  # This will be either username or email
+        username_or_email = request.POST.get('username')
         password = request.POST.get('password')
         
         if not username_or_email or not password:
@@ -362,26 +371,23 @@ def user_login(request):
             return redirect('login')
         
         # Try to authenticate with username first
-        user = authenticate(username=username_or_email, password=password)
+        user = authenticate(request, username=username_or_email, password=password)
         
         # If username authentication fails, try email
         if user is None:
             try:
                 username = User.objects.get(email=username_or_email).username
-                user = authenticate(username=username, password=password)
+                user = authenticate(request, username=username, password=password)
             except User.DoesNotExist:
                 user = None
         
         if user is not None:
             login(request, user)
-            next_url = request.GET.get('next', 'home')
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({
-                    'success': True,
-                    'message': "Login successful!",
-                    'redirect': next_url
+                    'success': True
                 })
-            return redirect(next_url)
+            return redirect('home')
         
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
@@ -515,8 +521,7 @@ def register(request):
             user = User.objects.create_user(username=username, email=email, password=password)
             login(request, user)
             return JsonResponse({
-                'success': True,
-                'message': "Registration successful!"
+                'success': True
             })
         except Exception as e:
             logger.error(f"Error creating user: {str(e)}")
