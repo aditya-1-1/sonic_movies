@@ -611,9 +611,9 @@
         </div>
 
         <div class="social-icons">
-            <a href="https://www.linkedin.com/in/aditya-goyal-ab1693313"><i class="fab fa-linkedin-f"></i></a>
+            <a href="https://www.instagram.com/aditya__goyal_1?igsh=MTY1Zzl4Y2hpenkzbQ==q"><i class="fab fa-instagram fa-lg"></i></a>
+            <a href="https://www.linkedin.com/in/aditya-goyal-ab1693313"><i class="fab fa-linkedin fa-lg"></i></a>
             <a href="https://x.com/goya68580"><i class="fab fa-twitter"></i></a>
-            <a href="linkedin.com/in/aditya-goyal-ab1693313"><i class="fab fa-linkedin-in"></i></a>
         </div>
 
         <div class="privacy">
@@ -764,7 +764,7 @@
                         <a href="https://x.com/goya68580" class="text-white" style="opacity: 0.8;"><i class="fab fa-twitter fa-lg"></i></a>
                         <a href="https://www.instagram.com/aditya__goyal_1?igsh=MTY1Zzl4Y2hpenkzbQ==q"
                             class="text-white" style="opacity: 0.8;"><i class="fab fa-instagram fa-lg"></i></a>
-                        <a href="linkedin.com/in/aditya-goyal-ab1693313" class="text-white" style="opacity: 0.8;"><i class="fab fa-linkedin fa-lg"></i></a>
+                        <a href="https://www.linkedin.com/in/aditya-goyal-ab1693313" class="text-white" style="opacity: 0.8;"><i class="fab fa-linkedin fa-lg"></i></a>
                     </div>
                     <p class="text-white mb-0" style="opacity: 0.8;">
                         Subscribe to our newsletter for updates and exclusive content.
@@ -798,18 +798,18 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Handle login form submission
-        $('#loginForm').on('submit', function (e) {
+    $(document).ready(function() {
+        // Login form submission
+        $('#loginForm').on('submit', function(e) {
             e.preventDefault();
             $.ajax({
-                url: $(this).attr('action'),
-                type: 'POST',
+                url: '/login/',
+                method: 'POST',
                 data: $(this).serialize(),
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                success: function (response) {
+                success: function(response) {
                     if (response.success) {
                         $('#loginModal').modal('hide');
                         window.location.href = response.redirect || '/';
@@ -817,30 +817,23 @@
                         alert(response.error || 'Login failed. Please try again.');
                     }
                 },
-                error: function (xhr) {
-                    console.log('Error:', xhr.status, xhr.responseText);
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        alert(response.error || 'An error occurred. Please try again.');
-                    } catch (e) {
-                        alert('An error occurred. Please try again.');
-                    }
+                error: function() {
+                    alert('Login failed. Please try again.');
                 }
             });
         });
 
-        // Handle register form submission
-        $('#registerForm').on('submit', function (e) {
+        // Register form submission
+        $('#registerForm').on('submit', function(e) {
             e.preventDefault();
             $.ajax({
-                url: $(this).attr('action'),
-                type: 'POST',
+                url: '/register/',
+                method: 'POST',
                 data: $(this).serialize(),
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                success: function (response) {
+                success: function(response) {
                     if (response.success) {
                         $('#registerModal').modal('hide');
                         window.location.href = response.redirect || '/';
@@ -848,17 +841,12 @@
                         alert(response.error || 'Registration failed. Please try again.');
                     }
                 },
-                error: function (xhr) {
-                    console.log('Error:', xhr.status, xhr.responseText);
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        alert(response.error || 'An error occurred. Please try again.');
-                    } catch (e) {
-                        alert('An error occurred. Please try again.');
-                    }
+                error: function() {
+                    alert('Registration failed. Please try again.');
                 }
             });
         });
+    });
     </script>
     {% block extra_js %}{% endblock %}
 </body>

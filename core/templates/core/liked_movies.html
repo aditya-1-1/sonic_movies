@@ -79,20 +79,7 @@ function showMovieDetails(movieId) {
 }
 </script>
 {% else %}
-<div class="container text-center py-5">
-    <h2>Login Required</h2>
-    <p>Please log in to view your liked movies.</p>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
-        <i class="fas fa-sign-in-alt"></i> Login
-    </button>
-</div>
-<script>
-    // Show login modal automatically
-    document.addEventListener('DOMContentLoaded', function() {
-        var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        loginModal.show();
-    });
-</script>
+{% include 'core/login_required.html' %}
 {% endif %}
 {% endblock %}
 
