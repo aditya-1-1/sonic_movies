@@ -8,64 +8,60 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <h2 class="mb-4">My Library</h2>
+            <h2 class="mb-4">Your Library</h2>
             
             <!-- Watchlist Section -->
-            <div class="mb-5">
+            <div class="movie-list-container mb-5">
                 <h3 class="mb-3">Watchlist</h3>
-                <div class="movie-list-container">
-                    {% if watchlist_movies %}
-                        <div class="row">
-                            {% for watchlist in watchlist_movies %}
-                                <div class="col-6 col-md-4 col-lg-3 mb-4">
-                                    <div class="movie-card">
-                                        <img src="{{ watchlist.movie.poster_url }}" alt="{{ watchlist.movie.title }}" class="movie-poster">
-                                        <div class="movie-info">
-                                            <h5>{{ watchlist.movie.title }}</h5>
-                                            <p>Added: {{ watchlist.added_at|date:"M d, Y" }}</p>
-                                            <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ watchlist.movie.id }}')">
-                                                View Details
-                                            </button>
-                                        </div>
+                {% if watchlist_movies %}
+                    <div class="row">
+                        {% for watchlist_movie in watchlist_movies %}
+                            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                                <div class="movie-card">
+                                    <img src="https://image.tmdb.org/t/p/w500{{ watchlist_movie.movie.poster_path }}" alt="{{ watchlist_movie.movie.title }}" class="movie-poster">
+                                    <div class="card-body">
+                                        <h5 class="movie-title">{{ watchlist_movie.movie.title }}</h5>
+                                        <p class="text-muted">Added: {{ watchlist_movie.added_at|date:"M d, Y" }}</p>
+                                        <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ watchlist_movie.movie.tmdb_id }}')">
+                                            View Details
+                                        </button>
                                     </div>
                                 </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center">
-                            <p>Your watchlist is empty.</p>
-                        </div>
-                    {% endif %}
-                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <p>Your watchlist is empty.</p>
+                    </div>
+                {% endif %}
             </div>
 
             <!-- Liked Movies Section -->
-            <div class="mb-5">
+            <div class="movie-list-container">
                 <h3 class="mb-3">Liked Movies</h3>
-                <div class="movie-list-container">
-                    {% if liked_movies %}
-                        <div class="row">
-                            {% for liked in liked_movies %}
-                                <div class="col-6 col-md-4 col-lg-3 mb-4">
-                                    <div class="movie-card">
-                                        <img src="{{ liked.movie.poster_url }}" alt="{{ liked.movie.title }}" class="movie-poster">
-                                        <div class="movie-info">
-                                            <h5>{{ liked.movie.title }}</h5>
-                                            <p>Liked: {{ liked.liked_at|date:"M d, Y" }}</p>
-                                            <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ liked.movie.id }}')">
-                                                View Details
-                                            </button>
-                                        </div>
+                {% if liked_movies %}
+                    <div class="row">
+                        {% for liked in liked_movies %}
+                            <div class="col-6 col-md-4 col-lg-3 mb-4">
+                                <div class="movie-card">
+                                    <img src="https://image.tmdb.org/t/p/w500{{ liked.movie.poster_path }}" alt="{{ liked.movie.title }}" class="movie-poster">
+                                    <div class="card-body">
+                                        <h5 class="movie-title">{{ liked.movie.title }}</h5>
+                                        <p class="text-muted">Liked: {{ liked.liked_at|date:"M d, Y" }}</p>
+                                        <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ liked.movie.tmdb_id }}')">
+                                            View Details
+                                        </button>
                                     </div>
                                 </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center">
-                            <p>You haven't liked any movies yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <p>You haven't liked any movies yet.</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -88,20 +84,25 @@
 
 <script>
 function showMovieDetails(movieId) {
-    fetch(`/api/movie/${movieId}/`)
+    fetch(`/movie/${movieId}/details/`)
         .then(response => response.json())
         .then(data => {
             const modal = new bootstrap.Modal(document.getElementById('movieDetailsModal'));
             document.getElementById('movieDetailsContent').innerHTML = `
                 <div class="row">
                     <div class="col-md-4">
-                        <img src="${data.poster_url}" alt="${data.title}" class="img-fluid">
+                        <img src="https://image.tmdb.org/t/p/w500${data.poster_path}" alt="${data.title}" class="img-fluid">
                     </div>
                     <div class="col-md-8">
                         <h4>${data.title}</h4>
-                        <p><strong>Rating:</strong> ${data.rating}/10</p>
+                        <p><strong>Rating:</strong> ${data.vote_average}/10</p>
                         <p><strong>Release Date:</strong> ${data.release_date}</p>
                         <p><strong>Overview:</strong> ${data.overview}</p>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" onclick="window.location.href='/movie/${movieId}/'">
+                                Watch Now
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
