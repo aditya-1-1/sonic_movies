@@ -349,20 +349,30 @@ def library(request):
 def user_login(request):
     """Handle login requests via AJAX and regular form submissions."""
     if request.method == "POST":
-        email = request.POST.get('email')
+        username_or_email = request.POST.get('username')  # This will be either username or email
         password = request.POST.get('password')
         
-        if not email or not password:
+        if not username_or_email or not password:
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': False,
-                    'error': "Please provide both email and password."
+                    'error': "Please provide both username/email and password."
                 })
-            messages.error(request, "Please provide both email and password.")
+            messages.error(request, "Please provide both username/email and password.")
             return redirect('login')
         
-        user = User.objects.filter(email=email).first()
-        if user and user.check_password(password):
+        # Try to authenticate with username first
+        user = authenticate(username=username_or_email, password=password)
+        
+        # If username authentication fails, try email
+        if user is None:
+            try:
+                username = User.objects.get(email=username_or_email).username
+                user = authenticate(username=username, password=password)
+            except User.DoesNotExist:
+                user = None
+        
+        if user is not None:
             login(request, user)
             next_url = request.GET.get('next', 'home')
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -376,13 +386,13 @@ def user_login(request):
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'error': "Invalid email or password."
+                'error': "Invalid username/email or password."
             })
-        messages.error(request, "Invalid email or password.")
+        messages.error(request, "Invalid username/email or password.")
         return redirect('login')
     
     # For GET requests, render the login page
-    return render(request, 'core/login.html')
+    return render(request, 'core/registration/login.html')
 
 @csrf_exempt
 def signup(request):
