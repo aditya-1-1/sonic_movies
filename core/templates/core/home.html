@@ -190,6 +190,27 @@
         </div>
     </div>
 </div>
+
+<style>
+.toast-message {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.toast-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -285,7 +306,10 @@ function addToWatchlist() {
             showToast(data.message);
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update watchlist. Please try again.');
+    });
 }
 
 function playVideo(videoUrl) {
@@ -312,11 +336,17 @@ function getCookie(name) {
 
 function showToast(message) {
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = 'toast-message';
     toast.textContent = message;
     document.body.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    // Remove after 3 seconds
     setTimeout(() => {
-        toast.remove();
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
 </script>

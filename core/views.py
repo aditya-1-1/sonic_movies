@@ -248,7 +248,7 @@ def liked_movies(request):
 def library(request):
     try:
         # Get user's watchlist movies
-        watchlist_movies = WatchlistMovie.objects.filter(
+        watchlist = WatchlistMovie.objects.filter(
             watchlist__user=request.user
         ).select_related('movie').order_by('-added_at')
 
@@ -258,7 +258,7 @@ def library(request):
         ).select_related('movie').order_by('-liked_at')
 
         context = {
-            'watchlist_movies': watchlist_movies,
+            'watchlist': watchlist,
             'liked_movies': liked_movies,
         }
         return render(request, 'core/library.html', context)
@@ -324,7 +324,16 @@ def add_to_watchlist(request, movie_id):
     """API endpoint to add movie to watchlist."""
     try:
         movie = get_object_or_404(Movie, tmdb_id=movie_id)
-        watchlist = Watchlist.objects.get_or_create(user=request.user)[0]
+        
+        # Get or create default watchlist for user
+        watchlist, created = Watchlist.objects.get_or_create(
+            user=request.user,
+            name="My Watchlist",
+            defaults={
+                'description': 'My default watchlist',
+                'privacy': 'private'
+            }
+        )
         
         watchlist_movie, created = WatchlistMovie.objects.get_or_create(
             watchlist=watchlist,

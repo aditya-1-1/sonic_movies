@@ -7,25 +7,31 @@
 {% if user.is_authenticated %}
 <div class="container-fluid">
     <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">Your Library</h2>
-            
-            <!-- Watchlist Section -->
-            <div class="movie-list-container mb-5">
-                <h3 class="mb-3">Watchlist</h3>
-                {% if watchlist_movies %}
-                    <div class="row">
-                        {% for watchlist_movie in watchlist_movies %}
-                            <div class="col-6 col-md-4 col-lg-3 mb-4">
-                                <div class="movie-card">
+        <!-- Watchlist Section -->
+        <div class="col-12 mb-5">
+            <h2 class="mb-4">Watchlist</h2>
+            <div class="movie-list-container">
+                {% if watchlist %}
+                    <div class="movie-scroll-container">
+                        {% for watchlist_movie in watchlist %}
+                            <div class="movie-card-wrapper">
+                                <div class="movie-card" data-movie-id="{{ watchlist_movie.movie.tmdb_id }}">
                                     <img src="https://image.tmdb.org/t/p/w500{{ watchlist_movie.movie.poster_path }}" alt="{{ watchlist_movie.movie.title }}" class="movie-poster">
                                     <div class="card-body">
                                         <h5 class="movie-title">{{ watchlist_movie.movie.title }}</h5>
                                         <p class="text-muted">Added: {{ watchlist_movie.added_at|date:"M d, Y" }}</p>
-                                        <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ watchlist_movie.movie.tmdb_id }}')">
-                                            View Details
-                                        </button>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button class="btn btn-primary btn-sm view-details-btn" onclick="showMovieDetails('{{ watchlist_movie.movie.tmdb_id }}')">
+                                                View Details
+                                            </button>
+                                            <button class="like-button" onclick="toggleLike(this)" data-movie-id="{{ watchlist_movie.movie.tmdb_id }}">
+                                                <i class="fas fa-heart"></i>
+                                            </button>
+                                        </div>
                                     </div>
+                                    <button class="remove-watchlist-btn" onclick="removeFromWatchlist('{{ watchlist_movie.movie.tmdb_id }}')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
                         {% endfor %}
@@ -36,10 +42,12 @@
                     </div>
                 {% endif %}
             </div>
+        </div>
 
-            <!-- Liked Movies Section -->
+        <!-- Liked Movies Section -->
+        <div class="col-12">
+            <h2 class="mb-4">Liked Movies</h2>
             <div class="movie-list-container">
-                <h3 class="mb-3">Liked Movies</h3>
                 {% if liked_movies %}
                     <div class="row">
                         {% for liked in liked_movies %}
@@ -49,9 +57,14 @@
                                     <div class="card-body">
                                         <h5 class="movie-title">{{ liked.movie.title }}</h5>
                                         <p class="text-muted">Liked: {{ liked.liked_at|date:"M d, Y" }}</p>
-                                        <button class="btn btn-primary btn-sm" onclick="showMovieDetails('{{ liked.movie.tmdb_id }}')">
-                                            View Details
-                                        </button>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button class="btn btn-primary btn-sm view-details-btn" onclick="showMovieDetails('{{ liked.movie.tmdb_id }}')">
+                                                View Details
+                                            </button>
+                                            <button class="like-button active" onclick="toggleLike(this)" data-movie-id="{{ liked.movie.tmdb_id }}">
+                                                <i class="fas fa-heart"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -67,69 +80,60 @@
     </div>
 </div>
 
-<!-- Movie Details Modal -->
-<div class="modal fade" id="movieDetailsModal" tabindex="-1" aria-hidden="true">
+<!-- Movie Modal -->
+<div class="modal fade" id="movieModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Movie Details</h5>
+                <h5 class="modal-title" id="movieTitle"></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="movieDetailsContent">
-                <!-- Content will be loaded dynamically -->
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <img id="moviePoster" src="" alt="" class="img-fluid">
+                    </div>
+                    <div class="col-md-8">
+                        <p><strong>Release Date:</strong> <span id="movieReleaseDate"></span></p>
+                        <p><strong>Rating:</strong> <span id="movieRating"></span></p>
+                        <p><strong>Runtime:</strong> <span id="movieRuntime"></span></p>
+                        <p><strong>Genres:</strong> <span id="movieGenres"></span></p>
+                        <p><strong>Overview:</strong> <span id="movieOverview"></span></p>
+                        <div class="mt-3 d-flex gap-2">
+                            <button id="watchNowBtn" class="btn btn-primary" style="display: none;">
+                                <i class="fas fa-play"></i> Watch Now
+                            </button>
+                            <button id="modalLikeButton" class="like-button" onclick="toggleLike(this)">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="videoContainer" class="mt-3" style="display: none;">
+                    <div class="video-wrapper">
+                        <iframe id="videoPlayer" width="100%" height="400" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-function showMovieDetails(movieId) {
-    fetch(`/api/movie/${movieId}/`)
-        .then(response => response.json())
-        .then(data => {
-            const modal = new bootstrap.Modal(document.getElementById('movieDetailsModal'));
-            document.getElementById('movieDetailsContent').innerHTML = `
-                <div class="row">
-                    <div class="col-md-4">
-                        <img src="https://image.tmdb.org/t/p/w500${data.poster_path}" alt="${data.title}" class="img-fluid">
-                    </div>
-                    <div class="col-md-8">
-                        <h4>${data.title}</h4>
-                        <p><strong>Rating:</strong> ${data.vote_average}/10</p>
-                        <p><strong>Release Date:</strong> ${data.release_date}</p>
-                        <p><strong>Overview:</strong> ${data.overview}</p>
-                        <div class="mt-3">
-                            <button class="btn btn-primary" onclick="window.location.href='/movie/${movieId}/'">
-                                Watch Now
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            modal.show();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to load movie details. Please try again.');
-        });
-}
-</script>
-{% else %}
-{% include 'core/login_required.html' %}
-{% endif %}
-{% endblock %}
-
-{% block extra_js %}
-<script>
 let currentMovieId = null;
 
 function showMovieDetails(movieId) {
     currentMovieId = movieId;
     fetch(`/api/movie/${movieId}/`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             document.getElementById('movieTitle').textContent = data.title;
-            document.getElementById('moviePoster').src = data.poster_path;
+            document.getElementById('moviePoster').src = `https://image.tmdb.org/t/p/w500${data.poster_path}`;
             document.getElementById('movieReleaseDate').textContent = data.release_date;
             document.getElementById('movieRating').textContent = `${data.vote_average} (${data.vote_count} votes)`;
             document.getElementById('movieRuntime').textContent = `${data.runtime} minutes`;
@@ -150,16 +154,13 @@ function showMovieDetails(movieId) {
                 watchNowBtn.style.display = 'none';
             }
 
-            // In library page, all movies are in watchlist, so always show Remove button
-            const watchlistBtn = document.getElementById('watchlistBtn');
-            watchlistBtn.innerHTML = '<i class="fas fa-trash"></i> Remove from Watchlist';
-            watchlistBtn.classList.remove('btn-outline-light');
-            watchlistBtn.classList.add('btn-outline-danger');
-
             // Show modal
             new bootstrap.Modal(document.getElementById('movieModal')).show();
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load movie details. Please try again.');
+        });
 }
 
 function toggleLike(button) {
@@ -179,55 +180,26 @@ function toggleLike(button) {
             btn.classList.toggle('active', data.is_liked);
         });
         
-        // If unliked, remove from liked movies section
+        // If unliked, remove the movie card
         if (!data.is_liked) {
-            const movieCard = button.closest('.movie-card');
-            if (movieCard && movieCard.closest('.movie-list').querySelector('.movie-list-title').textContent === 'Liked Movies') {
-                movieCard.remove();
-            }
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function toggleWatchlist() {
-    if (!currentMovieId) return;
-    
-    const watchlistBtn = document.getElementById('watchlistBtn');
-    const isInWatchlist = watchlistBtn.innerHTML.includes('Remove');
-    
-    fetch(`/api/movie/${currentMovieId}/watchlist/`, {
-        method: isInWatchlist ? 'DELETE' : 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (!isInWatchlist) {
-                // If we just added to watchlist, show Remove button
-                watchlistBtn.innerHTML = '<i class="fas fa-trash"></i> Remove from Watchlist';
-                watchlistBtn.classList.remove('btn-outline-light');
-                watchlistBtn.classList.add('btn-outline-danger');
-            } else {
-                // If we just removed from watchlist, show Add button
-                watchlistBtn.innerHTML = '<i class="fas fa-plus"></i> Add to Watchlist';
-                watchlistBtn.classList.remove('btn-outline-danger');
-                watchlistBtn.classList.add('btn-outline-light');
-                
-                // Remove movie card from watchlist section
-                const movieCard = document.querySelector(`.movie-card[data-movie-id="${currentMovieId}"]`);
-                if (movieCard) {
-                    movieCard.remove();
-                }
-            }
+            const movieCard = button.closest('.movie-card').parentElement;
+            movieCard.remove();
             
-            showToast(data.message);
+            // If no movies left in the section, show the empty message
+            const section = movieCard.closest('.col-12');
+            if (section.querySelectorAll('.movie-card').length === 0) {
+                section.querySelector('.movie-list-container').innerHTML = `
+                    <div class="text-center">
+                        <p>You haven't liked any movies yet.</p>
+                    </div>
+                `;
+            }
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update like status. Please try again.');
+    });
 }
 
 function playVideo(videoUrl) {
@@ -235,33 +207,6 @@ function playVideo(videoUrl) {
     const player = document.getElementById('videoPlayer');
     container.style.display = 'block';
     player.src = videoUrl;
-}
-
-function showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'toast position-fixed bottom-0 end-0 m-3';
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    toast.style.backgroundColor = '#000';
-    toast.style.color = 'whitesmoke';
-    toast.style.border = '1px solid #333';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, {
-        delay: 3000
-    });
-    bsToast.show();
-    toast.addEventListener('hidden.bs.toast', function () {
-        document.body.removeChild(toast);
-    });
 }
 
 function getCookie(name) {
@@ -287,5 +232,246 @@ document.getElementById('movieModal').addEventListener('hidden.bs.modal', functi
     player.src = '';
     currentMovieId = null;
 });
+
+function removeFromWatchlist(movieId) {
+    if (confirm('Are you sure you want to remove this movie from your watchlist?')) {
+        fetch(`/api/movie/${movieId}/watchlist/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Find and remove the movie card wrapper
+                const movieCard = document.querySelector(`.movie-card[data-movie-id="${movieId}"]`);
+                if (movieCard) {
+                    const wrapper = movieCard.closest('.movie-card-wrapper');
+                    if (wrapper) {
+                        wrapper.remove();
+                    }
+                }
+                
+                // If no movies left in watchlist section, show the empty message
+                const watchlistSection = document.querySelector('.movie-scroll-container');
+                if (watchlistSection && watchlistSection.children.length === 0) {
+                    const container = watchlistSection.closest('.movie-list-container');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="text-center">
+                                <p>Your watchlist is empty.</p>
+                            </div>
+                        `;
+                    }
+                }
+                showToast(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Failed to remove movie from watchlist. Please try again.');
+        });
+    }
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-message';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    // Remove toast after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 </script>
+
+<style>
+.like-button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.2s;
+}
+
+.like-button:hover {
+    transform: scale(1.1);
+}
+
+.like-button.active {
+    color: #e50914;
+}
+
+.view-details-btn {
+    background-color: #e50914;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.view-details-btn:hover {
+    background-color: #f40612;
+}
+
+.movie-card {
+    position: relative;
+    background: #141414;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.movie-card:hover {
+    transform: scale(1.05);
+}
+
+.movie-poster {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+.movie-title {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.text-muted {
+    color: #8c8c8c !important;
+    font-size: 0.8rem;
+}
+
+.remove-watchlist-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    z-index: 2;
+}
+
+.remove-watchlist-btn:hover {
+    background: rgba(229, 9, 20, 0.9);
+}
+
+.movie-scroll-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 1rem;
+    padding: 1rem 0;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #e50914 #141414;
+}
+
+.movie-scroll-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.movie-scroll-container::-webkit-scrollbar-track {
+    background: #141414;
+    border-radius: 4px;
+}
+
+.movie-scroll-container::-webkit-scrollbar-thumb {
+    background: #e50914;
+    border-radius: 4px;
+}
+
+.movie-card-wrapper {
+    flex: 0 0 auto;
+    width: 200px;
+    margin-right: 1rem;
+}
+
+.movie-card {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.movie-poster {
+    height: 300px;
+    object-fit: cover;
+}
+
+/* Update existing movie-card styles */
+.movie-card {
+    position: relative;
+    background: #141414;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1rem;
+}
+
+.movie-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.toast-message {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.toast-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+</style>
+{% else %}
+{% include 'core/login_required.html' %}
+{% endif %}
 {% endblock %} 
