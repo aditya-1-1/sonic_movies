@@ -20,8 +20,6 @@ from .tmdb_utils import TMDBAPI
 from django.contrib import messages
 from functools import wraps
 from django.urls import reverse
-from django.core.cache import cache
-from django.views.decorators.cache import cache_page
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -108,47 +106,36 @@ def get_genre_movies():
     
     return genre_movies
 
-@cache_page(60 * 15)  # Cache for 15 minutes
 def home(request):
     """Home page view with recommendations, popular movies, and genre lists."""
     try:
-        # Try to get popular movies from cache first
-        cache_key = 'popular_movies'
-        popular_movies = cache.get(cache_key)
-        
-        if not popular_movies:
-            try:
-                popular_movies_data = tmdb.get_popular_movies()
-                if popular_movies_data and 'results' in popular_movies_data:
-                    popular_movies = []
-                    for movie_data in popular_movies_data['results'][:20]:
-                        try:
-                            movie_details = tmdb.get_movie_details(movie_data['id'])
-                            if movie_details:
-                                movie = tmdb.save_movie_to_db(movie_details)
-                                if movie:
-                                    popular_movies.append(movie)
-                        except Exception as e:
-                            logger.error(f"Error processing movie {movie_data.get('id')}: {str(e)}")
-                            continue
-                    # Cache the results
-                    cache.set(cache_key, popular_movies, 60 * 15)  # Cache for 15 minutes
-            except Exception as e:
-                logger.error(f"Error fetching popular movies: {str(e)}")
-                # Fallback to cached popular movies if API fails
-                popular_movies = Movie.objects.filter(
-                    vote_count__gt=1000
-                ).order_by('-vote_average', '-vote_count')[:20]
+        # Try to get popular movies from TMDB
+        popular_movies = []
+        try:
+            popular_movies_data = tmdb.get_popular_movies()
+            if popular_movies_data and 'results' in popular_movies_data:
+                for movie_data in popular_movies_data['results'][:20]:
+                    try:
+                        movie_details = tmdb.get_movie_details(movie_data['id'])
+                        if movie_details:
+                            movie = tmdb.save_movie_to_db(movie_details)
+                            if movie:
+                                popular_movies.append(movie)
+                    except Exception as e:
+                        logger.error(f"Error processing movie {movie_data.get('id')}: {str(e)}")
+                        continue
+        except Exception as e:
+            logger.error(f"Error fetching popular movies: {str(e)}")
+            # Fallback to cached popular movies if API fails
+            popular_movies = Movie.objects.filter(
+                vote_count__gt=1000
+            ).order_by('-vote_average', '-vote_count')[:20]
         
         # Get recommendations for authenticated users
         recommended_movies = get_recommendations(request.user) if request.user.is_authenticated else []
         
-        # Get genre-based movie lists with caching
-        cache_key = 'genre_movies'
-        genre_movies = cache.get(cache_key)
-        if not genre_movies:
-            genre_movies = get_genre_movies()
-            cache.set(cache_key, genre_movies, 60 * 15)  # Cache for 15 minutes
+        # Get genre-based movie lists
+        genre_movies = get_genre_movies()
         
         context = {
             'popular_movies': popular_movies,
@@ -620,7 +607,6 @@ def search(request):
         messages.error(request, "Search failed. Please try again later.")
         return render(request, 'core/error.html', {'error': str(e)})
 
-@cache_page(60 * 15)  # Cache for 15 minutes
 def movie_details(request, movie_id):
     """API endpoint for movie details including video."""
     try:
@@ -628,12 +614,6 @@ def movie_details(request, movie_id):
             return JsonResponse({
                 'error': 'Invalid movie ID'
             }, status=400)
-        
-        # Try to get movie details from cache first
-        cache_key = f'movie_details_{movie_id}'
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return JsonResponse(cached_data)
         
         # Try to get movie from database first
         movie = Movie.objects.filter(tmdb_id=movie_id).first()
@@ -666,6 +646,7 @@ def movie_details(request, movie_id):
                         break
         except Exception as e:
             logger.error(f"Error fetching video data: {str(e)}")
+            # Continue without video if API fails
         
         # Check if movie is liked by user (only for authenticated users)
         is_liked = False
@@ -674,10 +655,9 @@ def movie_details(request, movie_id):
             # Add to watch history only for authenticated users
             WatchHistory.objects.create(user=request.user, movie=movie)
         
-        response_data = {
+        return JsonResponse({
             'title': movie.title,
             'poster_path': movie.poster_path,
-            'backdrop_path': f"https://image.tmdb.org/t/p/original{movie.backdrop_path}" if movie.backdrop_path else None,
             'release_date': movie.release_date.strftime('%B %d, %Y') if movie.release_date else None,
             'vote_average': movie.vote_average,
             'vote_count': movie.vote_count,
@@ -686,12 +666,7 @@ def movie_details(request, movie_id):
             'overview': movie.overview,
             'video_url': video_url,
             'is_liked': is_liked
-        }
-        
-        # Cache the response data
-        cache.set(cache_key, response_data, 60 * 15)  # Cache for 15 minutes
-        
-        return JsonResponse(response_data)
+        })
     except Exception as e:
         logger.error(f"Error in movie details view: {str(e)}")
         return JsonResponse({

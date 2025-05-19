@@ -21,8 +21,8 @@
             <div class="carousel-indicators">
                 {% for movie in popular_movies|slice:":5" %}
                 <button type="button" data-bs-target="#popularMoviesCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
-                    {% if forloop.first %}class="active" aria-current="true"{% endif %} 
-                    aria-label="Slide {{ forloop.counter }}"></button>
+                        {% if forloop.first %}class="active" aria-current="true"{% endif %} 
+                        aria-label="Slide {{ forloop.counter }}"></button>
                 {% endfor %}
             </div>
             <div class="carousel-inner">
@@ -37,16 +37,25 @@
                                 <div class="col-md-8 text-white">
                                     <h1 class="display-4 mb-3">{{ movie.title }}</h1>
                                     <div class="d-flex align-items-center mb-3">
-                                        <span class="badge bg-warning text-dark me-2">
-                                            <i class="fas fa-star"></i> {{ movie.vote_average|floatformat:1 }}
-                                        </span>
-                                        <span class="me-3">{{ movie.release_date|date:"Y" }}</span>
-                                        <span>{{ movie.runtime }} min</span>
+                                        <div class="me-3">
+                                            <i class="fas fa-star text-warning"></i>
+                                            <span class="ms-1">{{ movie.vote_average|floatformat:1 }}</span>
+                                        </div>
+                                        <div class="me-3">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <span class="ms-1">{{ movie.release_date|date:"Y" }}</span>
+                                        </div>
+                                        {% if movie.runtime %}
+                                        <div>
+                                            <i class="fas fa-clock"></i>
+                                            <span class="ms-1">{{ movie.runtime }} min</span>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                     <p class="lead mb-4">{{ movie.overview|truncatechars:200 }}</p>
                                     <div class="d-flex gap-3">
                                         <button class="btn btn-primary btn-lg" onclick="showMovieDetails('{{ movie.tmdb_id }}')">
-                                            <i class="fas fa-info-circle"></i> View Details
+                                            <i class="fas fa-play me-2"></i>Watch Now
                                         </button>
                                         {% if user.is_authenticated %}
                                         <button class="btn btn-outline-light btn-lg like-button {% if movie in user.liked_movies.all %}active{% endif %}" 
@@ -290,8 +299,9 @@
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* Popular Movies Slideshow Styles */
 .popular-movies-slideshow {
-    margin: -1rem -1.5rem 2rem -1.5rem;
+    margin: 0 -1.5rem;
 }
 
 .carousel-item {
@@ -310,20 +320,40 @@
     min-height: 50vh;
 }
 
-.carousel-control-prev,
-.carousel-control-next {
-    width: 5%;
-}
-
 .carousel-indicators {
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
 }
 
 .carousel-indicators button {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    margin: 0 5px;
+    margin: 0 6px;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 5%;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    width: 40px;
+    height: 40px;
+}
+
+@media (max-width: 768px) {
+    .carousel-item {
+        height: auto;
+    }
+    
+    .slide-content {
+        padding: 2rem 0;
+    }
+    
+    .col-md-4 {
+        margin-bottom: 2rem;
+    }
 }
 </style>
 {% endblock %}
