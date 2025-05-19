@@ -158,6 +158,47 @@
         </div>
     </div>
 </div>
+
+<style>
+.toast-message {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(33, 37, 41, 0.95);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 350px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toast-message::before {
+    content: '⚠️';
+    font-size: 18px;
+}
+
+.toast-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-message:hover {
+    background-color: rgba(33, 37, 41, 0.98);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -177,21 +218,28 @@ function showMovieDetails(movieId) {
             document.getElementById('movieGenres').textContent = data.genres.join(', ');
             document.getElementById('movieOverview').textContent = data.overview;
             
-            {% if user.is_authenticated %}
-            // Update like button state
+            // Handle like button and watch now button for authenticated users
             const likeButton = document.getElementById('modalLikeButton');
-            likeButton.classList.toggle('active', data.is_liked);
-            likeButton.dataset.movieId = movieId;
-
-            // Show/hide watch now button based on video availability
             const watchNowBtn = document.getElementById('watchNowBtn');
-            if (data.video_url) {
-                watchNowBtn.style.display = 'flex';
-                watchNowBtn.onclick = () => playVideo(data.video_url);
-            } else {
-                watchNowBtn.style.display = 'none';
+            
+            if (likeButton) {
+                if (data.is_liked !== undefined) {
+                    likeButton.style.display = 'flex';
+                    likeButton.classList.toggle('active', data.is_liked);
+                    likeButton.dataset.movieId = movieId;
+                } else {
+                    likeButton.style.display = 'none';
+                }
             }
-            {% endif %}
+            
+            if (watchNowBtn) {
+                if (data.video_url) {
+                    watchNowBtn.style.display = 'flex';
+                    watchNowBtn.onclick = () => playVideo(data.video_url);
+                } else {
+                    watchNowBtn.style.display = 'none';
+                }
+            }
 
             // Show modal
             new bootstrap.Modal(document.getElementById('movieModal')).show();
@@ -238,6 +286,14 @@ function addToWatchlist() {
     })
     .catch(error => console.error('Error:', error));
 }
+{% else %}
+function toggleLike(button) {
+    showToast('Please login to like movies');
+}
+
+function addToWatchlist() {
+    showToast('Please login to add movies to your watchlist');
+}
 {% endif %}
 
 function playVideo(videoUrl) {
@@ -264,7 +320,7 @@ function getCookie(name) {
 
 function showToast(message) {
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = 'toast-message';
     toast.textContent = message;
     document.body.appendChild(toast);
     setTimeout(() => {

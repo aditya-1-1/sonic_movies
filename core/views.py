@@ -161,18 +161,19 @@ def movie_detail(request, movie_id):
         
         # Get watch history if user is logged in
         watch_history = None
+        is_liked = False
         if request.user.is_authenticated:
             watch_history = WatchHistory.objects.filter(
                 user=request.user,
                 movie=movie
             ).first()
+            is_liked = LikedMovie.objects.filter(user=request.user, movie=movie).exists()
         
         context = {
             'movie': movie,
             'similar_movies': similar_movies,
             'watch_history': watch_history,
-            'is_liked': request.user.is_authenticated and 
-                       LikedMovie.objects.filter(user=request.user, movie=movie).exists()
+            'is_liked': is_liked
         }
         return render(request, 'core/movie_detail.html', context)
     except Exception as e:
@@ -606,7 +607,6 @@ def search(request):
         messages.error(request, "Search failed. Please try again later.")
         return render(request, 'core/error.html', {'error': str(e)})
 
-@login_required
 def movie_details(request, movie_id):
     """API endpoint for movie details including video."""
     try:
@@ -648,11 +648,12 @@ def movie_details(request, movie_id):
             logger.error(f"Error fetching video data: {str(e)}")
             # Continue without video if API fails
         
-        # Check if movie is liked by user
-        is_liked = LikedMovie.objects.filter(user=request.user, movie=movie).exists()
-        
-        # Add to watch history
-        WatchHistory.objects.create(user=request.user, movie=movie)
+        # Check if movie is liked by user (only for authenticated users)
+        is_liked = False
+        if request.user.is_authenticated:
+            is_liked = LikedMovie.objects.filter(user=request.user, movie=movie).exists()
+            # Add to watch history only for authenticated users
+            WatchHistory.objects.create(user=request.user, movie=movie)
         
         return JsonResponse({
             'title': movie.title,
