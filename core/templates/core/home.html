@@ -15,6 +15,65 @@
         </div>
     </form>
 
+    <!-- Popular Movies Slideshow -->
+    <div class="popular-movies-slideshow mb-5">
+        <div id="popularMoviesCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                {% for movie in popular_movies|slice:":5" %}
+                <button type="button" data-bs-target="#popularMoviesCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
+                    {% if forloop.first %}class="active" aria-current="true"{% endif %} 
+                    aria-label="Slide {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+            <div class="carousel-inner">
+                {% for movie in popular_movies|slice:":5" %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="slide-content" style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('{{ movie.backdrop_path }}');">
+                        <div class="container">
+                            <div class="row align-items-center min-vh-50">
+                                <div class="col-md-4">
+                                    <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="img-fluid rounded shadow-lg">
+                                </div>
+                                <div class="col-md-8 text-white">
+                                    <h1 class="display-4 mb-3">{{ movie.title }}</h1>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <span class="badge bg-warning text-dark me-2">
+                                            <i class="fas fa-star"></i> {{ movie.vote_average|floatformat:1 }}
+                                        </span>
+                                        <span class="me-3">{{ movie.release_date|date:"Y" }}</span>
+                                        <span>{{ movie.runtime }} min</span>
+                                    </div>
+                                    <p class="lead mb-4">{{ movie.overview|truncatechars:200 }}</p>
+                                    <div class="d-flex gap-3">
+                                        <button class="btn btn-primary btn-lg" onclick="showMovieDetails('{{ movie.tmdb_id }}')">
+                                            <i class="fas fa-info-circle"></i> View Details
+                                        </button>
+                                        {% if user.is_authenticated %}
+                                        <button class="btn btn-outline-light btn-lg like-button {% if movie in user.liked_movies.all %}active{% endif %}" 
+                                                data-movie-id="{{ movie.tmdb_id }}"
+                                                onclick="toggleLike(this)">
+                                            <i class="fas fa-heart"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#popularMoviesCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#popularMoviesCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </div>
+
     <!-- Recommendations based on watch history -->
     {% if recommended_movies %}
     <div class="movie-list-container mb-5">
@@ -229,6 +288,42 @@
     background-color: rgba(33, 37, 41, 0.98);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.popular-movies-slideshow {
+    margin: -1rem -1.5rem 2rem -1.5rem;
+}
+
+.carousel-item {
+    height: 600px;
+}
+
+.slide-content {
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+}
+
+.min-vh-50 {
+    min-height: 50vh;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 5%;
+}
+
+.carousel-indicators {
+    margin-bottom: 1rem;
+}
+
+.carousel-indicators button {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 5px;
 }
 </style>
 {% endblock %}

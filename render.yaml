@@ -3,7 +3,7 @@ services:
     name: sonic-movies
     env: python
     buildCommand: "python manage.py collectstatic --noinput"
-    startCommand: "python manage.py migrate --noinput && gunicorn core.wsgi:application"
+    startCommand: "python manage.py migrate --noinput && gunicorn core.wsgi:application --workers 4 --threads 2 --timeout 120"
     envVars:
       - key: DJANGO_SECRET_KEY
         sync: false
@@ -12,4 +12,11 @@ services:
       - key: DJANGO_ALLOWED_HOSTS
         value: sonic-movie.onrender.com,.onrender.com
       - key: TMDB_API_KEY
-        sync: false 
+        sync: false
+      - key: CACHE_BACKEND
+        value: django.core.cache.backends.locmem.LocMemCache
+      - key: CACHE_TIMEOUT
+        value: 900
+    healthCheckPath: /
+    autoDeploy: true
+    plan: starter 
